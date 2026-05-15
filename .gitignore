@@ -1,0 +1,13 @@
+build/
+bin/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+_deps/
+*.exe
+*.o
+*.a
+*.lib
+*.pdb
+textures/
