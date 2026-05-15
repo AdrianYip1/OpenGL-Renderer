@@ -20,8 +20,41 @@ void Render::setPosition(const Shader& shader, const enginemath::Mat4& projectio
     shader.setMat4("projectionM", projectionM);
 }
 
+void Render::render2DShader(const Shader& shader) {
+    if (quadVAO == 0) initQuad();
+    
+    shader.use();
+    glBindVertexArray(quadVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+}
+
 void Render::endFrame(GLFWwindow* window) {
 
     glfwSwapBuffers(window);
     glfwPollEvents();
+}
+
+void Render::initQuad() {
+    float vertices[] = {
+        -1.0f, 1.0f,
+        -1.0f, -1.0f,
+        1.0f, -1.0f,
+
+        -1.0f, 1.0f,
+        1.0f, -1.0f,
+        1.0f, 1.0f, 
+    };
+
+    glGenVertexArrays(1, &quadVAO);
+    glGenBuffers(1, &quadVBO);
+
+    glBindVertexArray(quadVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*) 0);
+    glEnableVertexAttribArray(0);
+
+    glBindVertexArray(0);
 }

@@ -15,10 +15,18 @@ class Render {
         void setPosition(const Shader& shader, const enginemath::Mat4& projectionM, 
                         const enginemath::Mat4& viewM, const enginemath::Mat4& modelM);
 
+        void render2DShader(const Shader& shader);
+
         void endFrame(GLFWwindow* window);
         // being and end frame
         //begin frame sets up stuff like uniforms, matrices
         //end frame handles buffers, polls
+
+    private:
+        unsigned int quadVAO = 0;
+        unsigned int quadVBO = 0;
+
+        void initQuad();
 };
 
 #endif

@@ -50,50 +50,6 @@ void processInput(GLFWwindow* window) {
     camera.angularInput(cameraFront, cameraAngles);
 }
 
-Vertex cubeVertices[] = {
-    // Back face
-    { { -0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, -1.0f }, {}, { 0.0f, 0.0f } },
-    { {  0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, -1.0f }, {}, { 1.0f, 0.0f } },
-    { {  0.5f,  0.5f, -0.5f }, { 0.0f, 0.0f, -1.0f }, {}, { 1.0f, 1.0f } },
-    { {  0.5f,  0.5f, -0.5f }, { 0.0f, 0.0f, -1.0f }, {}, { 1.0f, 1.0f } },
-    { { -0.5f,  0.5f, -0.5f }, { 0.0f, 0.0f, -1.0f }, {}, { 0.0f, 1.0f } },
-    { { -0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, -1.0f }, {}, { 0.0f, 0.0f } },
-    // Front face
-    { { -0.5f, -0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f }, {}, { 0.0f, 0.0f } },
-    { {  0.5f, -0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f }, {}, { 1.0f, 0.0f } },
-    { {  0.5f,  0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f }, {}, { 1.0f, 1.0f } },
-    { {  0.5f,  0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f }, {}, { 1.0f, 1.0f } },
-    { { -0.5f,  0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f }, {}, { 0.0f, 1.0f } },
-    { { -0.5f, -0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f }, {}, { 0.0f, 0.0f } },
-    // Left face
-    { { -0.5f,  0.5f,  0.5f }, { -1.0f, 0.0f, 0.0f }, {}, { 1.0f, 0.0f } },
-    { { -0.5f,  0.5f, -0.5f }, { -1.0f, 0.0f, 0.0f }, {}, { 1.0f, 1.0f } },
-    { { -0.5f, -0.5f, -0.5f }, { -1.0f, 0.0f, 0.0f }, {}, { 0.0f, 1.0f } },
-    { { -0.5f, -0.5f, -0.5f }, { -1.0f, 0.0f, 0.0f }, {}, { 0.0f, 1.0f } },
-    { { -0.5f, -0.5f,  0.5f }, { -1.0f, 0.0f, 0.0f }, {}, { 0.0f, 0.0f } },
-    { { -0.5f,  0.5f,  0.5f }, { -1.0f, 0.0f, 0.0f }, {}, { 1.0f, 0.0f } },
-    // Right face
-    { {  0.5f,  0.5f,  0.5f }, { 1.0f, 0.0f, 0.0f }, {}, { 1.0f, 0.0f } },
-    { {  0.5f,  0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f }, {}, { 1.0f, 1.0f } },
-    { {  0.5f, -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f }, {}, { 0.0f, 1.0f } },
-    { {  0.5f, -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f }, {}, { 0.0f, 1.0f } },
-    { {  0.5f, -0.5f,  0.5f }, { 1.0f, 0.0f, 0.0f }, {}, { 0.0f, 0.0f } },
-    { {  0.5f,  0.5f,  0.5f }, { 1.0f, 0.0f, 0.0f }, {}, { 1.0f, 0.0f } },
-    // Bottom face
-    { { -0.5f, -0.5f, -0.5f }, { 0.0f, -1.0f, 0.0f }, {}, { 0.0f, 1.0f } },
-    { {  0.5f, -0.5f, -0.5f }, { 0.0f, -1.0f, 0.0f }, {}, { 1.0f, 1.0f } },
-    { {  0.5f, -0.5f,  0.5f }, { 0.0f, -1.0f, 0.0f }, {}, { 1.0f, 0.0f } },
-    { {  0.5f, -0.5f,  0.5f }, { 0.0f, -1.0f, 0.0f }, {}, { 1.0f, 0.0f } },
-    { { -0.5f, -0.5f,  0.5f }, { 0.0f, -1.0f, 0.0f }, {}, { 0.0f, 0.0f } },
-    { { -0.5f, -0.5f, -0.5f }, { 0.0f, -1.0f, 0.0f }, {}, { 0.0f, 1.0f } },
-    // Top face
-    { { -0.5f,  0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f }, {}, { 0.0f, 1.0f } },
-    { {  0.5f,  0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f }, {}, { 1.0f, 1.0f } },
-    { {  0.5f,  0.5f,  0.5f }, { 0.0f, 1.0f, 0.0f }, {}, { 1.0f, 0.0f } },
-    { {  0.5f,  0.5f,  0.5f }, { 0.0f, 1.0f, 0.0f }, {}, { 1.0f, 0.0f } },
-    { { -0.5f,  0.5f,  0.5f }, { 0.0f, 1.0f, 0.0f }, {}, { 0.0f, 0.0f } },
-    { { -0.5f,  0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f }, {}, { 0.0f, 1.0f } },
-};
 
 int main() {
     glfwInit();
@@ -111,9 +67,8 @@ int main() {
     }
 
     glEnable(GL_DEPTH_TEST);
+    Shader testShader("shaders/2D_Shaders/2d.vert", "shaders/2D_Shaders/test.frag");
 
-    Mesh cube(cubeVertices, 36);
-    Shader shader("shaders/shader.vert", "shaders/shader.frag");
     Render renderer;
 
     while (!glfwWindowShouldClose(window)) {
@@ -126,15 +81,10 @@ int main() {
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        enginemath::Mat4 projection = enginemath::Mat4::projectionM(enginemath::toRad(45.0f), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
-        enginemath::Mat4 view = enginemath::Mat4::lookAtM(cameraPos, cameraPos + cameraFront, cameraUp);
-        enginemath::Mat4 model = enginemath::Mat4::identity();
-
-        cube.bind();
-        shader.use();
-        shader.setFloat("time", currentFrame);
-        renderer.setPosition(shader, projection, view, model);
-        renderer.draw(cube);
+        testShader.use();
+        testShader.setFloat("iTime", (float)glfwGetTime());
+        testShader.setVec2("iResolution", enginemath::Vec2((float)SCR_WIDTH, (float)SCR_HEIGHT));
+        renderer.render2DShader(testShader);
 
         renderer.endFrame(window);
     }

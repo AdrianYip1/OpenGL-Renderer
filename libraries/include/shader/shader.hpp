@@ -7,6 +7,7 @@
 #include <sstream>
 #include <iostream>
 #include <enginemath/mat4.hpp>
+#include <enginemath/vec2.hpp>
 
 class Shader {
     public:
@@ -15,11 +16,12 @@ class Shader {
     // constructor reads and builds the shader
     Shader(const char* vertexPath, const char* fragmentPath);
     // use/activate the shader
-    void use();
+    void use() const;
     // utility uniform functions
     void setBool(const std::string &name, bool value) const;
     void setInt(const std::string &name, int value) const;
     void setFloat(const std::string &name, float value) const;
+    void setVec2(const std::string &name, enginemath::Vec2 vector) const;
     void setVec3(const std::string &name, enginemath::Vec3 vector) const;
     void setVec4(const std::string &name, enginemath::Vec4 vector) const;
     void setMat4(const std::string &name, enginemath::Mat4 matrix) const;
