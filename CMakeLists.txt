@@ -37,6 +37,7 @@ add_executable(glsl-shaders
 
 file(COPY textures DESTINATION ${CMAKE_BINARY_DIR})
 file(COPY shaders  DESTINATION ${CMAKE_BINARY_DIR})
+file(COPY models DESTINATION ${CMAKE_BINARY_DIR})
 
 target_include_directories(glsl-shaders PRIVATE
     ${CMAKE_SOURCE_DIR}/libraries/include

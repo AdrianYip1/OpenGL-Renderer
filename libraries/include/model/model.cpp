@@ -8,7 +8,9 @@ using namespace std;
 
 static unsigned int TextureFromFile(const char *path, const string &directory)
 {
-    string filename = directory + "/" + string(path);
+    string texPath = string(path);
+    replace(texPath.begin(), texPath.end(), '\\', '/');
+    string filename = directory + "/" + texPath;
 
     unsigned int textureID;
     glGenTextures(1, &textureID);
@@ -53,7 +55,7 @@ void Model::Draw(Shader &shader)
 void Model::loadModel(string path)
 {
     Assimp::Importer import;
-    const aiScene *scene = import.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
+    const aiScene *scene = import.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenSmoothNormals);
 
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
         cout << "ERROR:ASSIMP::" << import.GetErrorString() << endl;

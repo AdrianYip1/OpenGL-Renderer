@@ -9,6 +9,7 @@
 #include <mesh/mesh.hpp>
 #include <mesh/vertex.h>
 #include <camera/camera.hpp>
+#include <model/model.hpp>
 
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
@@ -51,6 +52,7 @@ void processInput(GLFWwindow* window) {
 }
 
 
+
 int main() {
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -67,8 +69,45 @@ int main() {
     }
 
     glEnable(GL_DEPTH_TEST);
+    Shader shader("shaders/shader.vert", "shaders/shader.frag");
     Shader testShader("shaders/2D_Shaders/2d.vert", "shaders/2D_Shaders/test.frag");
 
+        
+    //sphere vertices and indices
+    std::vector<Vertex> vertices;
+    std::vector<unsigned int> indices;
+    int stacks = 128, slices = 128;
+
+    for(int i = 0; i <= stacks; i++) {
+        float phi = M_PI * i / stacks;
+        for(int j = 0; j <= slices; j++) {
+            float theta = 2 * M_PI * j / slices;
+            
+            Vertex v;
+            v.position  = { sin(phi)*cos(theta), cos(phi), sin(phi)*sin(theta) };
+            v.normal    = v.position; // unit sphere: normal == position
+            v.texcoords = { (float)j/slices, (float)i/stacks };
+            vertices.push_back(v);
+        }
+    }
+
+    for(int i = 0; i < stacks; i++) {
+        for(int j = 0; j < slices; j++) {
+            int top = i * (slices + 1) + j;
+            int bottom = top + slices + 1;
+            
+            indices.push_back(top);
+            indices.push_back(bottom);
+            indices.push_back(top + 1);
+            
+            indices.push_back(top + 1);
+            indices.push_back(bottom);
+            indices.push_back(bottom + 1);
+        }
+    }
+
+    Mesh sphere(vertices, indices, {});
+    Model miku("models/miku/miku.obj");
     Render renderer;
 
     while (!glfwWindowShouldClose(window)) {
@@ -81,10 +120,41 @@ int main() {
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        testShader.use();
-        testShader.setFloat("iTime", (float)glfwGetTime());
-        testShader.setVec2("iResolution", enginemath::Vec2((float)SCR_WIDTH, (float)SCR_HEIGHT));
-        renderer.render2DShader(testShader);
+        //testShader.use();
+        //testShader.setFloat("iTime", (float)glfwGetTime());
+        //testShader.setVec2("iResolution", enginemath::Vec2((float)SCR_WIDTH, (float)SCR_HEIGHT));
+        //renderer.render2DShader(testShader);
+
+        shader.use();
+
+        enginemath::Mat4 projection = enginemath::Mat4::projectionM(
+            45.0f * M_PI / 180.0f,
+            (float)SCR_WIDTH / (float)SCR_HEIGHT,
+            0.1f, 100.0f
+        );
+        enginemath::Mat4 view = enginemath::Mat4::lookAtM(
+            cameraPos, cameraPos + cameraFront, cameraUp
+        );
+        shader.setMat4("projection", projection);
+        shader.setMat4("view", view);
+        shader.setVec3("uCameraPosition", cameraPos);
+        shader.setVec3("dirLight", enginemath::Vec3(-1.0, -1.0, -0.4));
+        shader.setVec4("uColor", enginemath::Vec4(0.9, 0.2, 0.2, 1.0));
+        shader.setVec4("uAmbient", enginemath::Vec4(0.4, 0.4, 0.4, 1.0));
+        shader.setVec4("uDirectional", enginemath::Vec4(0.0, 0.9, 0.9, 1.0));
+        shader.setVec4("uSpecular", enginemath::Vec4(1.0, 1.0, 1.0, 1.0));
+        shader.setVec4("uRimColor", enginemath::Vec4(1.0, 1.0, 1.0, 1.0));
+        shader.setFloat("uGlossiness", 32);
+
+        shader.setMat4("model", enginemath::Mat4::identity());
+        //renderer.draw(sphere);
+
+        // scale from MMD units (~18 tall) to ~1.8 world units, center vertically
+        enginemath::Mat4 mikuModel = enginemath::Mat4::rotateY(enginemath::toRad(180)) * enginemath::Mat4::translationM(0.0f, -0.9f, 0.0f) * enginemath::Mat4::scaleM(0.1f, 0.1f, 0.1f);
+        shader.setMat4("model", mikuModel);
+        miku.Draw(shader);
+
+
 
         renderer.endFrame(window);
     }

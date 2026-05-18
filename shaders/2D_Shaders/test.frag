@@ -34,6 +34,5 @@ void main() {
         finalColor += d * col;
     }
     
-    
     FragColor = vec4(finalColor, 1.0);
 }
