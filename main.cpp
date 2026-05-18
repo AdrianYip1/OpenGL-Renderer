@@ -32,8 +32,8 @@ void processInput(GLFWwindow* window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
-    const float speed = 2.5f * deltaTime;
-    const float rotSpeed = 30.0f * deltaTime;
+    const float speed = 4.5f * deltaTime;
+    const float rotSpeed = 50.0f * deltaTime;
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         camera.directionalInput(cameraPos, cameraFront, speed);
@@ -69,9 +69,9 @@ int main() {
     }
 
     glEnable(GL_DEPTH_TEST);
-    Shader shader("shaders/shader.vert", "shaders/shader.frag");
-    Shader testShader("shaders/2D_Shaders/2d.vert", "shaders/2D_Shaders/test.frag");
-
+    //Shader shader("shaders/shader.vert", "shaders/shader.frag");
+    Shader shader("shaders/Stylized Shaders/anime/anime.vert", "shaders/Stylized Shaders/anime/anime.frag");
+    
         
     //sphere vertices and indices
     std::vector<Vertex> vertices;
@@ -137,13 +137,13 @@ int main() {
         );
         shader.setMat4("projection", projection);
         shader.setMat4("view", view);
-        shader.setVec3("uCameraPosition", cameraPos);
-        shader.setVec3("dirLight", enginemath::Vec3(-1.0, -1.0, -0.4));
-        shader.setVec4("uColor", enginemath::Vec4(0.9, 0.2, 0.2, 1.0));
-        shader.setVec4("uAmbient", enginemath::Vec4(0.4, 0.4, 0.4, 1.0));
-        shader.setVec4("uDirectional", enginemath::Vec4(0.0, 0.9, 0.9, 1.0));
-        shader.setVec4("uSpecular", enginemath::Vec4(1.0, 1.0, 1.0, 1.0));
-        shader.setVec4("uRimColor", enginemath::Vec4(1.0, 1.0, 1.0, 1.0));
+        shader.setVec3("uCameraPos", cameraPos);
+        shader.setVec3("uDirectionalLight", enginemath::Vec3(0.0, 0.0, -1.0));
+        shader.setVec4("uShadowColour", enginemath::Vec4(0.9, 0.2, 0.2, 1.0));
+        //shader.setVec4("uAmbient", enginemath::Vec4(0.4, 0.4, 0.4, 1.0));
+        //shader.setVec4("uDirectional", enginemath::Vec4(0.0, 0.9, 0.9, 1.0));
+        shader.setVec4("uSpecular", enginemath::Vec4(0.0, 0.0, 1.0, 0.0));
+        //shader.setVec4("uRimColor", enginemath::Vec4(1.0, 1.0, 1.0, 1.0));
         shader.setFloat("uGlossiness", 32);
 
         shader.setMat4("model", enginemath::Mat4::identity());
