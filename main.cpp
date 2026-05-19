@@ -10,9 +10,13 @@
 #include <mesh/vertex.h>
 #include <camera/camera.hpp>
 #include <model/model.hpp>
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
 
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+
+const unsigned int SCR_WIDTH = 1600;
+const unsigned int SCR_HEIGHT = 1200;
 
 enginemath::Vec3 cameraPos(0.0f, 0.0f, 3.0f);
 enginemath::Vec3 cameraFront(0.0f, 0.0f, -1.0f);
@@ -21,6 +25,7 @@ enginemath::Vec3 cameraAngles(0.0f, -90.0f, 0.0f);
 
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
+float usingShader = true;
 
 Camera camera;
 
@@ -28,7 +33,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
 }
 
-void processInput(GLFWwindow* window) {
+void processInput(GLFWwindow* window, Shader& shader) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
@@ -49,6 +54,29 @@ void processInput(GLFWwindow* window) {
     if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS) cameraAngles.y += rotSpeed;
 
     camera.angularInput(cameraFront, cameraAngles);
+
+    if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS) {
+        shader = Shader("shaders/shader.vert", "shaders/shader.frag");
+        usingShader = false;
+    }
+    if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {
+        shader = Shader("shaders/Stylized Shaders/anime/anime.vert", "shaders/Stylized Shaders/anime/anime.frag");
+        usingShader = true;
+    }
+}
+
+void shaderWithoutOutline( Shader& mainShader,  Model& model) {
+    mainShader.use();
+    glCullFace(GL_BACK);
+    model.Draw(mainShader);
+}
+
+void shaderWithOutline( Shader& outlineShader,  Model& model) {
+    outlineShader.use();
+    glCullFace(GL_FRONT);
+    model.Draw(outlineShader);
+
+    glCullFace(GL_BACK);
 }
 
 
@@ -62,6 +90,12 @@ int main() {
     GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "glsl-shaders", NULL, NULL);
     if (!window) { std::cerr << "Failed to create GLFW window\n"; glfwTerminate(); return -1; }
     glfwMakeContextCurrent(window);
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 330");
+
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
@@ -69,9 +103,10 @@ int main() {
     }
 
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
     //Shader shader("shaders/shader.vert", "shaders/shader.frag");
     Shader shader("shaders/Stylized Shaders/anime/anime.vert", "shaders/Stylized Shaders/anime/anime.frag");
-    
+    Shader outlineShader("shaders/Stylized Shaders/anime/outline.vert", "shaders/Stylized Shaders/anime/outline.frag");
         
     //sphere vertices and indices
     std::vector<Vertex> vertices;
@@ -107,15 +142,18 @@ int main() {
     }
 
     Mesh sphere(vertices, indices, {});
-    Model miku("models/miku/miku.obj");
+    Model genshin("models/Genshin Impact Alice/Genshin Impact Alice by Animanpower.fbx");
     Render renderer;
 
+    float lightDir[3] = { 1.0f, -1.0f, -1.0f };
+    float glossiness = 64;
+    float rimColor[3] = { 0.1f, 0.0f, 0.0f };
     while (!glfwWindowShouldClose(window)) {
         float currentFrame = (float)glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        processInput(window);
+        processInput(window, shader);
 
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -124,6 +162,19 @@ int main() {
         //testShader.setFloat("iTime", (float)glfwGetTime());
         //testShader.setVec2("iResolution", enginemath::Vec2((float)SCR_WIDTH, (float)SCR_HEIGHT));
         //renderer.render2DShader(testShader);
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        ImGui::Begin("Shader Controls");
+        ImGui::SliderFloat3("Directional Light", lightDir, -1.0, 1.0f);
+        ImGui::SliderFloat("Glossiness", &glossiness, 1.0f, 128.0f);
+        ImGui::ColorEdit3("Rim Color", rimColor);
+        ImGui::End();
+
+        // Render ImGui
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         shader.use();
 
@@ -138,22 +189,32 @@ int main() {
         shader.setMat4("projection", projection);
         shader.setMat4("view", view);
         shader.setVec3("uCameraPos", cameraPos);
-        shader.setVec3("uDirectionalLight", enginemath::Vec3(1.0, -1.0, -1.0));
+        shader.setVec3("uDirectionalLight", enginemath::Vec3(lightDir[0], lightDir[1], lightDir[2]));
 
         //shader.setVec4("uAmbient", enginemath::Vec4(0.4, 0.4, 0.4, 1.0));
         //shader.setVec4("uDirectional", enginemath::Vec4(0.0, 0.9, 0.9, 1.0));
         shader.setVec4("uSpecular", enginemath::Vec4(1.0, 1.0, 1.0, 0.0));
-        shader.setVec4("uRimColor", enginemath::Vec4(0.05, 0.05, 0.05, 1.0));
-        shader.setFloat("uGlossiness", 16);
+        shader.setVec4("uRimColor", enginemath::Vec4(rimColor[0], rimColor[1], rimColor[2], 1.0));
+        shader.setFloat("uGlossiness", glossiness);
 
         shader.setMat4("model", enginemath::Mat4::identity());
         //renderer.draw(sphere);
 
-        // scale from MMD units (~18 tall) to ~1.8 world units, center vertically
-        enginemath::Mat4 mikuModel = enginemath::Mat4::rotateY(enginemath::toRad(180)) * enginemath::Mat4::translationM(0.0f, -0.9f, 0.0f) * enginemath::Mat4::scaleM(0.1f, 0.1f, 0.1f);
-        shader.setMat4("model", mikuModel);
-        miku.Draw(shader);
 
+        enginemath::Mat4 genshinModel = enginemath::Mat4::translationM(0.0f, -1.0f, 0.0f);
+        shader.setMat4("model", genshinModel);
+
+        shaderWithoutOutline(shader, genshin);
+
+        if (usingShader) {
+            outlineShader.use();
+            outlineShader.setMat4("projection", projection);
+            outlineShader.setMat4("view", view);
+            outlineShader.setMat4("model", genshinModel);
+            outlineShader.setFloat("uOutlineWidth", 0.001);
+
+            shaderWithOutline(outlineShader, genshin);
+        }
 
 
         renderer.endFrame(window);
@@ -162,3 +223,5 @@ int main() {
     glfwTerminate();
     return 0;
 }
+
+

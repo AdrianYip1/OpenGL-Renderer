@@ -40,13 +40,11 @@ void main() {
     float specSmooth = smoothstep(0.3, 0.32, spec);
     vec4 specular = uSpecular * specSmooth;
 
-
 // Rim Lighting
     float rim = 1 - max(dot(viewDir, norm), 0.0);
-    rim = step(0.8, rim);
+    rim = step(0.5, rim);
     vec4 rimColor = rim * uRimColor * 0.5;
 
 
-//Outlines
     FragColor = targetColor + rimColor + specular;
 }
