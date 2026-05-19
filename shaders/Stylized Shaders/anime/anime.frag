@@ -13,9 +13,10 @@ struct Material {
 uniform Material material;
 
 uniform vec3 uDirectionalLight;
-uniform vec4 uShadowColour;
+
 uniform vec4 uSpecular;
 uniform float uGlossiness;
+uniform vec4 uRimColor;
 
 void main() {
 
@@ -25,22 +26,27 @@ void main() {
     vec3 norm = normalize(Normal);
     vec3 lightDir = normalize(-uDirectionalLight);
     float NDiff = dot(norm, lightDir);
-    float lightIntensityDir = step(0.1, NDiff);
+    float lightIntensityDir = step(0.3, NDiff);
 
 // Distinct colour for lit and shadow areas
-    vec4 targetColor = mix(uShadowColour, texColor, lightIntensityDir);
+    vec4 shadowTinted = vec4(clamp(texColor.rgb * 0.85, 0.0, 1.0), 1.0);
+    vec4 targetColor = mix(shadowTinted, texColor, lightIntensityDir);
 
 // Specular (Use half vector -> Blinn-Phong model)
     vec3 viewDir = normalize(ViewDir);
     vec3 halfVect = normalize(viewDir + lightDir);
-    float NSpec = max(dot(norm, halfVect), 0.0);
-    float spec = pow(NSpec, uGlossiness);
-    spec = step(0.7, spec);
-    vec4 specular = uSpecular * spec;
+    float NSpec = max(dot(norm, halfVect), 0.0) * lightIntensityDir;
+    float spec = pow(NSpec, uGlossiness * uGlossiness);
+    float specSmooth = smoothstep(0.3, 0.32, spec);
+    vec4 specular = uSpecular * specSmooth;
 
 
 // Rim Lighting
+    float rim = 1 - max(dot(viewDir, norm), 0.0);
+    rim = step(0.8, rim);
+    vec4 rimColor = rim * uRimColor * 0.5;
+
 
 //Outlines
-    FragColor = targetColor + specular;
+    FragColor = targetColor + rimColor + specular;
 }

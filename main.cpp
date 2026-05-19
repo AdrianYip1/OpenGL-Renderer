@@ -138,13 +138,13 @@ int main() {
         shader.setMat4("projection", projection);
         shader.setMat4("view", view);
         shader.setVec3("uCameraPos", cameraPos);
-        shader.setVec3("uDirectionalLight", enginemath::Vec3(0.0, 0.0, -1.0));
-        shader.setVec4("uShadowColour", enginemath::Vec4(0.9, 0.2, 0.2, 1.0));
+        shader.setVec3("uDirectionalLight", enginemath::Vec3(1.0, -1.0, -1.0));
+
         //shader.setVec4("uAmbient", enginemath::Vec4(0.4, 0.4, 0.4, 1.0));
         //shader.setVec4("uDirectional", enginemath::Vec4(0.0, 0.9, 0.9, 1.0));
-        shader.setVec4("uSpecular", enginemath::Vec4(0.0, 0.0, 1.0, 0.0));
-        //shader.setVec4("uRimColor", enginemath::Vec4(1.0, 1.0, 1.0, 1.0));
-        shader.setFloat("uGlossiness", 32);
+        shader.setVec4("uSpecular", enginemath::Vec4(1.0, 1.0, 1.0, 0.0));
+        shader.setVec4("uRimColor", enginemath::Vec4(0.05, 0.05, 0.05, 1.0));
+        shader.setFloat("uGlossiness", 16);
 
         shader.setMat4("model", enginemath::Mat4::identity());
         //renderer.draw(sphere);
