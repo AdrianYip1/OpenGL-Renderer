@@ -7,4 +7,5 @@ struct Vertex {
     enginemath::Vec3 position;
     enginemath::Vec3 normal;
     enginemath::Vec2 texcoords;
+    enginemath::Vec3 tangent;
 };

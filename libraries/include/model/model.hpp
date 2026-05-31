@@ -18,6 +18,7 @@ class Model {
     std::vector<Texture> textures_loaded;
     std::vector<Mesh> meshes;
     std::string directory;
+    unsigned int defaultNormalMap;
 
     void loadModel(std::string path);
     void processNode(aiNode *node, const aiScene* scene);

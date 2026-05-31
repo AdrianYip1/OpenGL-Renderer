@@ -17,6 +17,8 @@ class Render {
 
         void render2DShader(const Shader& shader);
 
+        void drawQuad();
+        void setupQuad();
         void endFrame(GLFWwindow* window);
         // being and end frame
         //begin frame sets up stuff like uniforms, matrices

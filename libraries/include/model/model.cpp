@@ -55,12 +55,19 @@ void Model::Draw(Shader &shader)
 void Model::loadModel(string path)
 {
     Assimp::Importer import;
-    const aiScene *scene = import.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenSmoothNormals);
+    const aiScene *scene = import.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace);
 
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
         cout << "ERROR:ASSIMP::" << import.GetErrorString() << endl;
         return;
     }
+
+    unsigned char flatNormal[3] = { 128, 128, 255 };
+    glGenTextures(1, &defaultNormalMap);
+    glBindTexture(GL_TEXTURE_2D, defaultNormalMap);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, flatNormal);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     directory = path.substr(0, path.find_last_of('/'));
     processNode(scene->mRootNode, scene);
@@ -105,6 +112,11 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene* scene)
         }
         else vertex.texcoords = enginemath::Vec2(0.0f, 0.0f);
 
+        vector.x = mesh->mTangents[i].x;
+        vector.y = mesh->mTangents[i].y;
+        vector.z = mesh->mTangents[i].z;
+        vertex.tangent = vector;
+
         vertices.push_back(vertex);
     }
 
@@ -122,6 +134,16 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene* scene)
 
         vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
         textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
+
+        vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_NORMALS, "texture_normal");
+        if (normalMaps.empty()) {
+            Texture fallback;
+            fallback.id   = defaultNormalMap;
+            fallback.type = "texture_normal";
+            fallback.path = "__default_normal__";
+            normalMaps.push_back(fallback);
+        }
+        textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
     }
 
     return Mesh(vertices, indices, textures);

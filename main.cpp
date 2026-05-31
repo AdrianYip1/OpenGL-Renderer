@@ -119,8 +119,8 @@ int main() {
             float theta = 2 * M_PI * j / slices;
             
             Vertex v;
-            v.position  = { sin(phi)*cos(theta), cos(phi), sin(phi)*sin(theta) };
-            v.normal    = v.position; // unit sphere: normal == position
+            v.position = { sin(phi)*cos(theta), cos(phi), sin(phi)*sin(theta) };
+            v.normal = v.position; // unit sphere: normal == position
             v.texcoords = { (float)j/slices, (float)i/stacks };
             vertices.push_back(v);
         }
@@ -148,6 +148,54 @@ int main() {
     float lightDir[3] = { 1.0f, -1.0f, -1.0f };
     float glossiness = 64;
     float rimColor[3] = { 0.1f, 0.0f, 0.0f };
+
+    unsigned int hdrFBO;
+    glGenFramebuffers(1, &hdrFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
+    unsigned int colourBuffers[2];
+    glGenTextures(2, colourBuffers);
+    for (unsigned int i = 0; i < 2; i++) {
+        glBindTexture(GL_TEXTURE_2D, colourBuffers[i]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0+i, GL_TEXTURE_2D, colourBuffers[i], 0);
+    }
+    unsigned int rboDepth;
+    glGenRenderbuffers(1, &rboDepth);
+    glBindRenderbuffer(GL_RENDERBUFFER, rboDepth);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, SCR_WIDTH, SCR_HEIGHT);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepth);
+    unsigned int attachments[2] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
+    glDrawBuffers(2, attachments);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    
+    unsigned int pingpongFBO[2];
+    unsigned int pingpongBuffer[2];
+    glGenFramebuffers(2, pingpongFBO);
+    glGenTextures(2, pingpongBuffer);
+    for (unsigned int i = 0; i < 2; i++) {
+        glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[i]);
+        glBindTexture(GL_TEXTURE_2D, pingpongBuffer[i]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pingpongBuffer[i], 0);
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    Shader blurShader("shaders/blur.vert", "shaders/blur.frag");
+    Shader hdrShader("shaders/hdr.vert", "shaders/hdr.frag");
+    renderer.setupQuad();
+    float exposure = 1.0;
+
+
     while (!glfwWindowShouldClose(window)) {
         float currentFrame = (float)glfwGetTime();
         deltaTime = currentFrame - lastFrame;
@@ -155,13 +203,8 @@ int main() {
 
         processInput(window, shader);
 
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        //testShader.use();
-        //testShader.setFloat("iTime", (float)glfwGetTime());
-        //testShader.setVec2("iResolution", enginemath::Vec2((float)SCR_WIDTH, (float)SCR_HEIGHT));
-        //renderer.render2DShader(testShader);
+
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
@@ -169,13 +212,14 @@ int main() {
         ImGui::Begin("Shader Controls");
         ImGui::SliderFloat3("Directional Light", lightDir, -1.0, 1.0f);
         ImGui::SliderFloat("Glossiness", &glossiness, 1.0f, 128.0f);
+        ImGui::SliderFloat("Exposure", &exposure, 0.0f, 5.0f);
         ImGui::ColorEdit3("Rim Color", rimColor);
         ImGui::End();
 
-        // Render ImGui
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
+        // Pass 1
+        glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         shader.use();
 
         enginemath::Mat4 projection = enginemath::Mat4::projectionM(
@@ -191,16 +235,13 @@ int main() {
         shader.setVec3("uCameraPos", cameraPos);
         shader.setVec3("uDirectionalLight", enginemath::Vec3(lightDir[0], lightDir[1], lightDir[2]));
 
-        //shader.setVec4("uAmbient", enginemath::Vec4(0.4, 0.4, 0.4, 1.0));
-        //shader.setVec4("uDirectional", enginemath::Vec4(0.0, 0.9, 0.9, 1.0));
         shader.setVec4("uSpecular", enginemath::Vec4(1.0, 1.0, 1.0, 0.0));
         shader.setVec4("uRimColor", enginemath::Vec4(rimColor[0], rimColor[1], rimColor[2], 1.0));
         shader.setFloat("uGlossiness", glossiness);
 
         shader.setMat4("model", enginemath::Mat4::identity());
-        //renderer.draw(sphere);
 
-
+        // * enginemath::Mat4::scaleM(0.05f, 0.05f, 0.05f)
         enginemath::Mat4 genshinModel = enginemath::Mat4::translationM(0.0f, -1.0f, 0.0f);
         shader.setMat4("model", genshinModel);
 
@@ -212,9 +253,42 @@ int main() {
             outlineShader.setMat4("view", view);
             outlineShader.setMat4("model", genshinModel);
             outlineShader.setFloat("uOutlineWidth", 0.001);
-
             shaderWithOutline(outlineShader, genshin);
         }
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        // Pass 2
+        blurShader.use();
+        blurShader.setInt("image", 0);
+        bool horizontal = false;
+        for (unsigned int i = 0; i < 2; i++) {
+            glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[horizontal]);
+            blurShader.setBool("isHorizontal", horizontal);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, i == 0 ? colourBuffers[1] : pingpongBuffer[!horizontal]);
+            renderer.drawQuad();
+            horizontal = !horizontal;
+        }
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        // Pass 3
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        hdrShader.use();
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, colourBuffers[0]);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, pingpongBuffer[!horizontal]);
+
+        hdrShader.setInt("hdrBuffer", 0);
+        hdrShader.setInt("bloomBlur", 1);
+        hdrShader.setFloat("exposure", exposure);
+        renderer.drawQuad();
+
+        
+        // Render ImGui
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
 
         renderer.endFrame(window);

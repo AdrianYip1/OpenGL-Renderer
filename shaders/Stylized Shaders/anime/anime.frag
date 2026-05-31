@@ -1,14 +1,17 @@
 #version 330 core
 
-out vec4 FragColor;
+layout (location = 0) out vec4 FragColor;
+layout (location = 1) out vec4 BrightColor;
 
 in vec3 FragPos;
 in vec2 TexCoord;
 in vec3 ViewDir;
 in vec3 Normal;
+in mat3 TBN;
 
 struct Material {
     sampler2D texture_diffuse1;
+    sampler2D texture_normal1;
 };
 uniform Material material;
 
@@ -23,7 +26,8 @@ void main() {
     vec4 texColor = texture(material.texture_diffuse1, TexCoord);
 
 // Diffuse with hard cutoff
-    vec3 norm = normalize(Normal);
+    vec3 normalSample = texture(material.texture_normal1, TexCoord).rgb;
+    vec3 norm = normalize(TBN * normalize(normalSample * 2.0 - 1.0));
     vec3 lightDir = normalize(-uDirectionalLight);
     float NDiff = dot(norm, lightDir);
     float lightIntensityDir = step(0.3, NDiff);
@@ -47,4 +51,12 @@ void main() {
 
 
     FragColor = targetColor + rimColor + specular;
+
+    float brightness = dot(FragColor.rgb, vec3(0.2126, 0.7152, 0.0722));
+    if (brightness > 2.5) {
+        BrightColor = vec4(FragColor.rgb, 1.0);
+    }
+    else {
+        BrightColor = vec4(0.0, 0.0, 0.0, 1.0);
+    }
 }
