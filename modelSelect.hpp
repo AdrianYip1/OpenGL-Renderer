@@ -5,6 +5,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <enginemath/vec3.hpp>
+#include <enginemath/vec4.hpp>
 #include <enginemath/mat4.hpp>
 #include <enginemath/mathutils.hpp>
 #include <shader/shader.hpp>
@@ -104,24 +105,26 @@ class ModelSelect {
                     }
 
                     // Set up uniforms
+                    currentShader->use();
                     currentShader->setMat4("projection", projection);
                     currentShader->setMat4("view", view);
                     currentShader->setMat4("model", modelMatrix);
                     currentShader->setVec3("uCameraPos", cameraPos);
 
-                    currentShader->setVec3("uDirectionalLight", params.dirLight);
+                    currentShader->setVec3("uDirectionalLight", enginemath::Vec3(params.dirLight[0], params.dirLight[1], params.dirLight[2]));
 
-                    currentShader->setVec4("uSpecular", params.specular);
-                    currentShader->setVec4("uRimColor", params.rimColor);
+                    currentShader->setVec4("uSpecular", enginemath::Vec4(params.specularColor[0], params.specularColor[1], params.specularColor[2], params.specularColor[3]));
+                    currentShader->setVec4("uRimColor", enginemath::Vec4(params.rimColor[0], params.rimColor[1], params.rimColor[2], params.rimColor[3]));
                     currentShader->setFloat("uGlossiness", params.glossiness);
 
                     // Render the model (1st pass)
                     shaderWithoutOutline(*currentShader, *currentlyLoaded);
 
-                    if (params.outline) {
+                    if (params.bOutline) {
                         if (outlineShader == nullptr) {
                             outlineShader = new Shader("shaders/Stylized Shaders/anime/outline.vert", "shaders/Stylized Shaders/anime/outline.frag");
                         }
+                        outlineShader->use();
                         outlineShader->setMat4("projection", projection);
                         outlineShader->setMat4("view", view);
                         outlineShader->setMat4("model", modelMatrix);

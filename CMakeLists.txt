@@ -55,7 +55,7 @@ add_executable(glsl-shaders
     libraries/include/render/render.cpp
     libraries/include/camera/camera.cpp
     stb_image.cpp
-    main.cpp
+    shaderShowcase.cpp
     glad.c
 )
 
@@ -65,6 +65,7 @@ file(COPY models DESTINATION ${CMAKE_BINARY_DIR})
 
 target_include_directories(glsl-shaders PRIVATE
     ${CMAKE_SOURCE_DIR}/libraries/include
+    ${CMAKE_SOURCE_DIR}
 )
 
 if (WIN32)

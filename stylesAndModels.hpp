@@ -7,7 +7,7 @@ struct ShaderParams {
     float dirLight[3];
 
     // Specular Light: color, glossiness, specular map
-    float specularLight[4];
+    float specularColor[4];
     float glossiness;
     bool bSpecularMap = false;
     std::string specularMap;
