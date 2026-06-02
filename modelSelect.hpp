@@ -20,6 +20,9 @@
 // modelSelect will contain methods for rendering specific models:
 // Setting their shaders, textures, positions, and scaling
 
+//ShaderParams will consist of the uniform information needed and boolian values for
+// different effects such as outlining, bloom, hdr,...
+
 class ModelSelect {
     public: 
 

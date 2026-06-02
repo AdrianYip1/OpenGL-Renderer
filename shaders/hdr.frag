@@ -13,7 +13,7 @@ void main() {
     vec3 hdr = texture(hdrBuffer, TexCoords).rgb;
     vec3 bloom = texture(bloomBlur, TexCoords).rgb;
     hdr += bloom;
-    vec3 mapped = vec3(1.0) - exp(-hdr * exposure);
+    vec3 mapped = vec3(1.0) - exp(-hdr * exposure); // change to aces tonemapping
 
     mapped = pow(mapped, vec3(1.0/gamma));
      
