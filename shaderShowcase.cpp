@@ -111,9 +111,10 @@ int main() {
     bool bBloom = false;
     int blurPasses = 0;
 
-    ModelSelect model;
-    // Render Loop
     Render renderer;
+    ModelSelect model(renderer);
+    // Render Loop
+
     while (!glfwWindowShouldClose(window)) {
 
         float currentFrame = (float) glfwGetTime();

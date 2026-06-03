@@ -28,7 +28,7 @@ class ModelSelect {
     public:
 
         // Constructor that sets all the points to null
-        ModelSelect() {
+        ModelSelect(Render renderer) {
             currentlyLoaded = nullptr;
             currentModel = NONE_MODEL;
 
@@ -36,8 +36,11 @@ class ModelSelect {
             outlineShader = nullptr;
             currentStyle = NONE_STYLE;
 
-            gBufferShader = new Shader("shaders/Stylized Shaders/anime/anime.vert",
-                                       "shaders/Stylized Shaders/anime/anime.gFB");
+            passthroughShader = new Shader("shaders/Stylized Shaders/passthrough.vert", 
+                                          "shaders/Stylized Shaders/passthrough.frag");
+
+            gBufferShader = new Shader("shaders/Stylized Shaders/anime/anime.geo.vert",
+                                       "shaders/Stylized Shaders/anime/anime.geo.frag");
 
             // Set up gBuffer
             glGenFramebuffers(1, &gBuffer);
@@ -67,8 +70,8 @@ class ModelSelect {
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, gAlbedoSpec, 0);
 
-            unsigned int attachments[3] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
-            glDrawBuffers(3, attachments);
+            unsigned int textureAttachments[3] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
+            glDrawBuffers(3, textureAttachments);
 
             // Renderbuffer object for depth
             glGenRenderbuffers(1, &rboDepth);
@@ -77,6 +80,31 @@ class ModelSelect {
             glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepth);
 
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+            // Setup Lighting FBO and color buffers
+            glGenFramebuffers(1, &lightingFBO);
+            glBindFramebuffer(GL_FRAMEBUFFER, lightingFBO);
+
+            // Set up colour attachments
+            glGenTextures(2, lightingColorBuffers);
+            for (int i = 0; i < 2; i++) {
+                glBindTexture(GL_TEXTURE_2D, lightingColorBuffers[i]);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0 , GL_RGBA, GL_FLOAT, NULL);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, lightingColorBuffers[i], 0);
+            }
+            
+            unsigned int lightAttachments[2] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
+            glDrawBuffers(2, lightAttachments);
+
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+            this->renderer = new Render;
+            this->renderer->setupQuad();
         }
 
         void selectModel(ModelType model, Style shaderStyle, ShaderParams& params, enginemath::Mat4 projection,
@@ -120,6 +148,7 @@ class ModelSelect {
 
 
     private:
+        Render* renderer;
         Model* currentlyLoaded;
         ModelType currentModel;
 
@@ -127,7 +156,10 @@ class ModelSelect {
         Shader* outlineShader;
         Style currentStyle;
 
-        // Hard coded for now
+        // Passthrough shaders for final render
+        Shader* passthroughShader;
+
+        // Hard coded for now to prevent the function from being overcomplicated
         const unsigned int SCR_WIDTH = 1600;
         const unsigned int SCR_HEIGHT = 1200;
 
@@ -137,7 +169,7 @@ class ModelSelect {
         Shader* gBufferShader;
 
         unsigned int lightingFBO;
-        unsigned int lightingColorBuffers[2] // FragColor and BrightColor
+        unsigned int lightingColorBuffers[2]; // FragColor and BrightColor
 
         void selectStyle(Style shaderStyle, ShaderParams& params, enginemath::Mat4 projection,
         enginemath::Mat4 view, enginemath::Vec3 cameraPos, enginemath::Mat4 modelMatrix) {
@@ -152,6 +184,12 @@ class ModelSelect {
                     break;
                 }
                 case (ANIME): {
+                    if (currentStyle != shaderStyle || currentShader == nullptr) {
+                        delete currentShader;
+                        currentShader = new Shader("shaders/Stylized Shaders/anime/anime.vert", "shaders/Stylized Shaders/anime/anime.frag");
+                        currentStyle = shaderStyle;
+                    }
+
                     // Geometry pass
                     glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
                     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -163,7 +201,40 @@ class ModelSelect {
                     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
                     // Lighting Pass
+                    glBindFramebuffer(GL_FRAMEBUFFER, lightingFBO);
 
+                    // Bind textures from the geometry pass
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(GL_TEXTURE_2D, gPosition);
+                    glActiveTexture(GL_TEXTURE1);
+                    glBindTexture(GL_TEXTURE_2D, gNormal);
+                    glActiveTexture(GL_TEXTURE2);
+                    glBindTexture(GL_TEXTURE_2D, gAlbedoSpec);
+
+                    currentShader->use();
+                    currentShader->setInt("geometryPass.gPosTexture", 0);
+                    currentShader->setInt("geometryPass.gNormalTexture", 1);
+                    currentShader->setInt("geometryPass.gAlbedoSpecTexture", 2);
+
+                    currentShader->setVec3("uCameraPos", cameraPos);
+                    currentShader->setVec3("uDirectionalLight", enginemath::Vec3(params.dirLight[0], params.dirLight[1], params.dirLight[2]));
+                    currentShader->setVec4("uSpecular", enginemath::Vec4(params.specularColor[0], params.specularColor[1], params.specularColor[2], params.specularColor[3]));
+                    currentShader->setFloat("uGlossiness", params.glossiness);
+                    currentShader->setBool("bRimColor", params.bRimColor);
+                    currentShader->setVec4("uRimColor", enginemath::Vec4(params.rimColor[0], params.rimColor[1], params.rimColor[2], params.rimColor[3]));
+                    renderer->drawQuad();
+                    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+                    passthroughShader->use();
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(GL_TEXTURE_2D, lightingColorBuffers[0]);
+                    passthroughShader->setInt("finalTextureImage", 0);
+                    renderer->drawQuad();
+
+                    // Copy depth from gBuffer to default framebuffer
+                    glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
+                    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+                    glBlitFramebuffer(0, 0, SCR_WIDTH, SCR_HEIGHT, 0, 0, SCR_WIDTH, SCR_HEIGHT, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 
                     if (params.bOutline) {
                         if (outlineShader == nullptr) {
