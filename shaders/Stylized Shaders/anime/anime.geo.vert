@@ -23,7 +23,7 @@ void main() {
     vec3 B = cross(N, T);
     TBN = mat3(T, B, N);
     
-    TexCoords = aTexCoords;
+    TexCoords = aTexCoord;
     ViewDir = uCameraPos;
     FragPos = vec3(model * vec4(aPos, 1.0));
     Normal = mat3(transpose(inverse(model))) * aNormal;
