@@ -22,7 +22,16 @@ uniform bool bRimColor;
 uniform vec4 uRimColor;
 
 void main() {
-    vec3 fragPos = texture(geometryPass.gPosTexture, TexCoords).rgb;
+
+    // Early exit check for background
+    vec4 posData = texture(geometryPass.gPosTexture, TexCoords);
+    if (posData.a == 0.0) {
+        FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        BrightColor = vec4(0.0, 0.0, 0.0, 1.0);
+        return;
+    }
+
+    vec3 fragPos = posData.rgb;
     vec3 viewDir = normalize(uCameraPos - fragPos);
     vec4 texColor = texture(geometryPass.gAlbedoSpecTexture, TexCoords);
 
