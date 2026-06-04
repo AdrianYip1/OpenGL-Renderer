@@ -111,10 +111,12 @@ int main() {
     bool bBloom = false;
     int blurPasses = 0;
 
-    Render renderer;
-    ModelSelect model(renderer);
-    // Render Loop
+    static const char* hdrOptions[] = {"Exposure", "GT", "ACES"};
+    int currentHDR = 0;
 
+    Render renderer;
+    ModelSelect model;
+    // Render Loop
     while (!glfwWindowShouldClose(window)) {
 
         float currentFrame = (float) glfwGetTime();
@@ -157,6 +159,22 @@ int main() {
 
         ImGui::Checkbox("Enable Bloom", &bBloom);
         ImGui::SliderInt("Blur Passes", &blurPasses, 0, 10);
+
+        if (ImGui::BeginCombo("Select HDR Option", hdrOptions[currentHDR])) {
+            for (int i = 0; i < IM_ARRAYSIZE(hdrOptions); i++) {
+                // Check if specific item is currently selected
+                bool is_selected_hdr = (currentHDR == i);
+
+                // Render selected hdr
+                if (ImGui::Selectable(hdrOptions[i], is_selected_hdr)) {
+                    currentHDR = i;
+                }
+
+                if (is_selected_hdr) ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+        }
+
         ImGui::End();
 
         ShaderParams params;
@@ -185,6 +203,7 @@ int main() {
 
         params.bHDR = bHDR;
         params.exposure = exposure;
+        params.HDRtype = currentHDR;
 
         params.bBloom = bBloom;
         params.blurPasses = blurPasses;

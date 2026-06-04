@@ -35,6 +35,7 @@ struct ShaderParams {
     // HDR
     bool bHDR = false;
     float exposure;
+    unsigned int HDRtype; // 0: exposure, 1: GT, 2: ACE
 
     // Bloom
     bool bBloom = false;

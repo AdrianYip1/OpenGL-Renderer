@@ -21,6 +21,10 @@ uniform float uGlossiness;
 uniform bool bRimColor;
 uniform vec4 uRimColor;
 
+uniform vec3 lightTint;
+uniform vec3 shadowTint;
+uniform vec3 ambientTint;
+
 void main() {
 
     // Early exit check for background
@@ -34,6 +38,7 @@ void main() {
     vec3 fragPos = posData.rgb;
     vec3 viewDir = normalize(uCameraPos - fragPos);
     vec4 texColor = texture(geometryPass.gAlbedoSpecTexture, TexCoords);
+    texColor.rgb *= ambientTint;
 
 // Diffuse with hard cutoff
     vec3 normal = texture(geometryPass.gNormalTexture, TexCoords).rgb;
@@ -42,8 +47,8 @@ void main() {
     float lightIntensityDir = step(0.3, NDiff);
 
 // Distinct colour for lit and shadow areas
-    vec4 shadowTinted = vec4(clamp(texColor.rgb * 0.85, 0.0, 1.0), 1.0);
-    vec4 targetColor = mix(shadowTinted, texColor, lightIntensityDir);
+    vec4 shadowTinted = vec4(clamp(texColor.rgb * shadowTint, 0.0, 1.0), 1.0);
+    vec4 targetColor = mix(shadowTinted, texColor, lightIntensityDir) * vec4(lightTint, 1.0);
 
 // Specular (Use half vector -> Blinn-Phong model)
     float specMap = texColor.a;
