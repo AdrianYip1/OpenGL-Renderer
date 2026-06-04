@@ -29,6 +29,9 @@ class ModelSelect {
 
         // Constructor that sets all the points to null
         ModelSelect(Render renderer) {
+            this->renderer = new Render;
+            this->renderer->setupQuad();
+
             currentlyLoaded = nullptr;
             currentModel = NONE_MODEL;
 
@@ -41,6 +44,27 @@ class ModelSelect {
 
             gBufferShader = new Shader("shaders/Stylized Shaders/anime/anime.geo.vert",
                                        "shaders/Stylized Shaders/anime/anime.geo.frag");
+
+            bloomShader = new Shader("shaders/blur.vert", 
+                                     "shaders/blur.frag");
+
+            hdrShader = new Shader("shaders/hdr.vert", 
+                                   "shaders/hdr.frag");
+
+            // Set up final pass FBO + texture
+            glGenFramebuffers(1, &finalPassFBO);
+            glBindFramebuffer(GL_FRAMEBUFFER, finalPassFBO);
+
+            glGenTextures(1, &finalPassTexture);
+            glBindTexture(GL_TEXTURE_2D, finalPassTexture);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, finalPassTexture, 0);
+
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
             // Set up gBuffer
             glGenFramebuffers(1, &gBuffer);
@@ -86,16 +110,16 @@ class ModelSelect {
             glBindFramebuffer(GL_FRAMEBUFFER, lightingFBO);
 
             // Set up colour attachments
-            glGenTextures(2, lightingColorBuffers);
+            glGenTextures(2, lightingColorTextures);
             for (int i = 0; i < 2; i++) {
-                glBindTexture(GL_TEXTURE_2D, lightingColorBuffers[i]);
+                glBindTexture(GL_TEXTURE_2D, lightingColorTextures[i]);
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0 , GL_RGBA, GL_FLOAT, NULL);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, lightingColorBuffers[i], 0);
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, lightingColorTextures[i], 0);
             }
             
             unsigned int lightAttachments[2] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
@@ -103,8 +127,39 @@ class ModelSelect {
 
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-            this->renderer = new Render;
-            this->renderer->setupQuad();
+            // Set up bloom
+            glGenFramebuffers(2, bloomFBO);
+            for (int i = 0; i < 2; i++) {
+                glBindFramebuffer(GL_FRAMEBUFFER, bloomFBO[i]);
+
+                glGenTextures(1, &bloomTexture[i]);
+                glBindTexture(GL_TEXTURE_2D, bloomTexture[i]);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, bloomTexture[i], 0);
+            }
+
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+            // Set up HDR
+            glGenFramebuffers(1, &hdrFBO);
+            glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
+
+            glGenTextures(1, &hdrTexture);
+            glBindTexture(GL_TEXTURE_2D, hdrTexture);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, hdrTexture, 0);
+
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }
 
         void selectModel(ModelType model, Style shaderStyle, ShaderParams& params, enginemath::Mat4 projection,
@@ -169,7 +224,21 @@ class ModelSelect {
         Shader* gBufferShader;
 
         unsigned int lightingFBO;
-        unsigned int lightingColorBuffers[2]; // FragColor and BrightColor
+        unsigned int lightingColorTextures[2]; // FragColor and BrightColor
+
+        // Bloom
+        Shader* bloomShader;
+        unsigned int bloomFBO[2];
+        unsigned int bloomTexture[2];
+
+        // HDR 
+        Shader* hdrShader;
+        unsigned int hdrFBO;
+        unsigned int hdrTexture;
+
+        // Final Pass
+        unsigned int finalPassFBO;
+        unsigned int finalPassTexture;
 
         void selectStyle(Style shaderStyle, ShaderParams& params, enginemath::Mat4 projection,
         enginemath::Mat4 view, enginemath::Vec3 cameraPos, enginemath::Mat4 modelMatrix) {
@@ -202,6 +271,7 @@ class ModelSelect {
 
                     // Lighting Pass
                     glBindFramebuffer(GL_FRAMEBUFFER, lightingFBO);
+                    glClear(GL_COLOR_BUFFER_BIT);
 
                     // Bind textures from the geometry pass
                     glActiveTexture(GL_TEXTURE0);
@@ -225,9 +295,62 @@ class ModelSelect {
                     renderer->drawQuad();
                     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+                    // Copy lightingColorTextures[0] into finalPassTexture
+                    glBindFramebuffer(GL_READ_FRAMEBUFFER, lightingFBO);
+                    glReadBuffer(GL_COLOR_ATTACHMENT0);
+                    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, finalPassFBO);
+                    glBlitFramebuffer(0, 0, SCR_WIDTH, SCR_HEIGHT, 0, 0, SCR_WIDTH, SCR_HEIGHT, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+                    
+                    // Bloom Pass
+                    for (int i = 0; i < 2; i++) {
+                        glBindFramebuffer(GL_FRAMEBUFFER, bloomFBO[i]);
+                        glClear(GL_COLOR_BUFFER_BIT);
+                    }
+                    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+                    bool horizontal = false;
+                    if (params.bBloom) {
+                        bloomShader->use();
+                        // Image is the "bright" lights from lighting pass
+                        bloomShader->setInt("image", 0);
+                        for (unsigned int i = 0; i < params.blurPasses; i++) {
+                            glBindFramebuffer(GL_FRAMEBUFFER, bloomFBO[horizontal]);
+                            bloomShader->setBool("isHorizontal", horizontal);
+                            glActiveTexture(GL_TEXTURE0);
+                            glBindTexture(GL_TEXTURE_2D, i == 0 ? lightingColorTextures[1] : bloomTexture[!horizontal]);
+                            renderer->drawQuad();
+                            horizontal = !horizontal;
+                        }
+                    }
+                    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+                    // HDR Pass
+                    if (params.bHDR) {
+                        hdrShader->use();
+                        glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
+                        glClear(GL_COLOR_BUFFER_BIT);
+
+                        // Pass textures from Bloom
+                        glActiveTexture(GL_TEXTURE0);
+                        glBindTexture(GL_TEXTURE_2D, lightingColorTextures[0]);
+                        glActiveTexture(GL_TEXTURE1);
+                        glBindTexture(GL_TEXTURE_2D, bloomTexture[!horizontal]);
+
+                        hdrShader->setFloat("exposure", params.exposure);
+                        hdrShader->setInt("hdrBuffer", 0);
+                        hdrShader->setInt("bloomBlur", 1);
+                        renderer->drawQuad();
+
+                        glBindFramebuffer(GL_READ_FRAMEBUFFER, hdrFBO);
+                        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, finalPassFBO);
+                        glBlitFramebuffer(0, 0, SCR_WIDTH, SCR_HEIGHT, 0, 0, SCR_WIDTH, SCR_HEIGHT, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+                    }
+                    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
                     passthroughShader->use();
                     glActiveTexture(GL_TEXTURE0);
-                    glBindTexture(GL_TEXTURE_2D, lightingColorBuffers[0]);
+                    glBindTexture(GL_TEXTURE_2D, finalPassTexture); // from lighting pass, maybe move it to a general buffer
                     passthroughShader->setInt("finalTextureImage", 0);
                     renderer->drawQuad();
 
@@ -235,6 +358,7 @@ class ModelSelect {
                     glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
                     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
                     glBlitFramebuffer(0, 0, SCR_WIDTH, SCR_HEIGHT, 0, 0, SCR_WIDTH, SCR_HEIGHT, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+
 
                     if (params.bOutline) {
                         if (outlineShader == nullptr) {
