@@ -43,7 +43,6 @@ float gtTonemap(float x) {
 }
 
 void main() {
-    const float gamma = 2.2;
     vec3 hdr = texture(hdrBuffer, TexCoords).rgb;
     vec3 bloom = texture(bloomBlur, TexCoords).rgb;
     hdr += bloom;
@@ -54,8 +53,6 @@ void main() {
     if (HDRtype == 0) mapped = exposureTonemap(hdr);
     else if (HDRtype == 1) mapped = acesTonemap(hdr * exposure);
     else mapped = vec3(gtTonemap(hdr.r * exposure), gtTonemap(hdr.g * exposure), gtTonemap(hdr.b * exposure));
-
-    mapped = pow(mapped, vec3(1.0 / gamma));
 
     FragColor = vec4(mapped, 1.0);
 }

@@ -295,7 +295,9 @@ class ModelSelect {
                     currentShader->setVec3("shadowTint", enginemath::Vec3(params.shadowTint[0], params.shadowTint[1], params.shadowTint[2]));
                     currentShader->setVec3("lightTint", enginemath::Vec3(params.lightTint[0], params.lightTint[1], params.lightTint[2]));
                     currentShader->setVec3("ambientTint", enginemath::Vec3(params.ambientTint[0], params.ambientTint[1], params.ambientTint[2]));
-                    
+                    currentShader->setFloat("uSaturation", params.saturation);
+
+
                     renderer->drawQuad();
                     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -344,6 +346,7 @@ class ModelSelect {
                         hdrShader->setFloat("exposure", params.exposure);
                         hdrShader->setInt("hdrBuffer", 0);
                         hdrShader->setInt("bloomBlur", 1);
+
                         renderer->drawQuad();
 
                         glBindFramebuffer(GL_READ_FRAMEBUFFER, hdrFBO);

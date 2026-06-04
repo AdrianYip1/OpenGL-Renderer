@@ -25,6 +25,9 @@ uniform vec3 lightTint;
 uniform vec3 shadowTint;
 uniform vec3 ambientTint;
 
+uniform float uSaturation;
+
+
 void main() {
 
     // Early exit check for background
@@ -58,16 +61,21 @@ void main() {
     float specSmooth = smoothstep(0.3, 0.32, spec);
     vec4 specular = uSpecular * specSmooth * specMap;
 
+// Saturation
+    float LUM = dot(targetColor.rgb, vec3(0.2126, 0.7152, 0.0722));
+    targetColor.rgb = mix(vec3(LUM), targetColor.rgb, uSaturation); //grey when uSat = 0, norma when uSat = 1
+
 // Rim Lighting
-    float rim = 1 - max(dot(viewDir, normal), 0.0);
-    rim = step(0.5, rim);
-    vec4 rimColor = rim * uRimColor * 0.5 * (bRimColor ? 1.0 : 0.0);
+    float rim = 1.0 - max(dot(viewDir, normal), 0.0);
+    rim = step(0.75, rim);
+    rim *= clamp(-NDiff + 0.5, 0.0, 1.0); // stronger on shadow-facing edges
+    vec4 rimColor = rim * uRimColor * (bRimColor ? 1.0 : 0.0);
 
 
     FragColor = targetColor + rimColor + specular;
 
     float brightness = dot(FragColor.rgb, vec3(0.2126, 0.7152, 0.0722));
-    if (brightness > 0.8) {
+    if (brightness > 1.0) {
         BrightColor = vec4(FragColor.rgb, 1.0);
     }
     else {

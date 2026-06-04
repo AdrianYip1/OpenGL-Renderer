@@ -103,13 +103,14 @@ int main() {
     float outlineBurnIntensity = 0.0f;
     float outlineLightInfluence = 0.0f;
     float gamma = 2.2f;
-    float exposure = 1.0f;
+    float exposure = 0.6f;
     bool bSpecularMap = false;
     bool bRimColor = false;
     bool bOutline = false;
     bool bHDR = false;
     bool bBloom = false;
     int blurPasses = 0;
+    float saturation = 1.0f;
 
     static const char* hdrOptions[] = {"Exposure", "GT", "ACES"};
     int currentHDR = 0;
@@ -141,6 +142,7 @@ int main() {
         ImGui::ColorEdit3("Ambient Tint", ambientTint);
         ImGui::ColorEdit3("Shadow Tint", shadowTint);
         ImGui::ColorEdit3("Light Tint", lightTint);
+        ImGui::SliderFloat("Saturation", &saturation, 0.0f, 3.0f);
 
         ImGui::Checkbox("Enable Rim Color", &bRimColor);
         ImGui::ColorEdit3("Rim Color", rimColor);
@@ -155,7 +157,7 @@ int main() {
         ImGui::SliderFloat("Gamma", &gamma, 0.0f, 3.0f);
 
         ImGui::Checkbox("Enable HDR", &bHDR);
-        ImGui::SliderFloat("Exposure", &exposure, 0.0f, 5.0f);
+        ImGui::SliderFloat("Exposure", &exposure, 0.0f, 2.0f);
 
         ImGui::Checkbox("Enable Bloom", &bBloom);
         ImGui::SliderInt("Blur Passes", &blurPasses, 0, 10);
@@ -187,6 +189,8 @@ int main() {
         memcpy(params.ambientTint, ambientTint, sizeof(ambientTint));
         memcpy(params.shadowTint, shadowTint, sizeof(shadowTint));
         memcpy(params.lightTint, lightTint, sizeof(lightTint));
+
+        params.saturation = saturation;
 
         params.bRimColor = bRimColor;
         float tempRim[4] = {rimColor[0], rimColor[1], rimColor[2], 1.0f};

@@ -17,6 +17,8 @@ struct ShaderParams {
     float shadowTint[3];
     float lightTint[3];
 
+    float saturation;
+
     // Rim lighting
     bool bRimColor = false;
     float rimColor[4];

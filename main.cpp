@@ -193,7 +193,7 @@ int main() {
     Shader blurShader("shaders/blur.vert", "shaders/blur.frag");
     Shader hdrShader("shaders/hdr.vert", "shaders/hdr.frag");
     renderer.setupQuad();
-    float exposure = 1.0;
+    float exposure = 0.6f;
 
 
     while (!glfwWindowShouldClose(window)) {
@@ -212,7 +212,7 @@ int main() {
         ImGui::Begin("Shader Controls");
         ImGui::SliderFloat3("Directional Light", lightDir, -1.0, 1.0f);
         ImGui::SliderFloat("Glossiness", &glossiness, 1.0f, 128.0f);
-        ImGui::SliderFloat("Exposure", &exposure, 0.0f, 5.0f);
+        ImGui::SliderFloat("Exposure", &exposure, 0.0f, 2.0f);
         ImGui::ColorEdit3("Rim Color", rimColor);
         ImGui::End();
 
