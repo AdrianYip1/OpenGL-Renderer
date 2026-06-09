@@ -182,7 +182,7 @@ class ModelSelect {
                         currentlyLoaded = new Model("models/samus/samus.fbx");
                         currentModel = model;
                     }
-                    enginemath::Mat4 samusModelMat = enginemath::Mat4::translationM(0.0f, -1.0f, 0.0f) * enginemath::Mat4::scaleM(0.1f, 0.1f, 0.1f);
+                    enginemath::Mat4 samusModelMat = enginemath::Mat4::translationM(0.0f, -1.0f, 0.0f) * enginemath::Mat4::scaleM(0.01f, 0.01f, 0.01f);
                     selectStyle(shaderStyle, params, projection, view, cameraPos, samusModelMat);
                     break;
                 }
@@ -192,7 +192,7 @@ class ModelSelect {
                         currentlyLoaded = new Model("models/tangrowth/tangrowth.fbx");
                         currentModel = model;
                     }
-                    enginemath::Mat4 tanModelMat = enginemath::Mat4::translationM(0.0f, -1.0f, 0.0f) * enginemath::Mat4::scaleM(0.1f, 0.1f, 0.1f);
+                    enginemath::Mat4 tanModelMat = enginemath::Mat4::translationM(0.0f, -1.0f, 0.0f) * enginemath::Mat4::scaleM(0.01f, 0.01f, 0.01f);
                     selectStyle(shaderStyle, params, projection, view, cameraPos, tanModelMat);
                     break;
                 }
@@ -243,13 +243,42 @@ class ModelSelect {
         void selectStyle(Style shaderStyle, ShaderParams& params, enginemath::Mat4 projection,
         enginemath::Mat4 view, enginemath::Vec3 cameraPos, enginemath::Mat4 modelMatrix) {
             switch (shaderStyle) {
+                case (NONE_STYLE): {
+                    if (currentStyle != shaderStyle || currentShader == nullptr) {
+                        delete currentShader;
+                        currentShader = new Shader("shaders/shader.vert", "shaders/shader.frag");
+                        currentStyle = shaderStyle;
+                    }
+
+                    currentShader->use();
+                    currentShader->setMat4("projection", projection);
+                    currentShader->setMat4("view", view);
+                    currentShader->setMat4("model", modelMatrix);
+                    currentlyLoaded->Draw(*currentShader);
+
+                    break;
+                }
                 case (CARTOON): {
                     if (currentStyle != shaderStyle || currentShader == nullptr) {
                         delete currentShader;
                         currentShader = new Shader("shaders/Stylized Shaders/toon/toon.vert", "shaders/Stylized Shaders/toon/toon.frag");
                         currentStyle = shaderStyle;
                     }
+                    currentShader->use();
+                    currentShader->setMat4("projection", projection);
+                    currentShader->setMat4("view", view);
+                    currentShader->setMat4("model", modelMatrix);
+                    currentShader->setVec3("uCameraPosition", cameraPos);
 
+                    currentShader->setVec3("dirLight", enginemath::Vec3(params.dirLight[0], params.dirLight[1], params.dirLight[2]));
+                    currentShader->setVec4("uAmbient", enginemath::Vec4(params.ambientTint[0], params.ambientTint[1], params.ambientTint[2], 1.0f));
+                    currentShader->setVec4("uDirectional", enginemath::Vec4(params.lightTint[0], params.lightTint[1], params.lightTint[2], 1.0f));
+                    currentShader->setVec4("uSpecular", enginemath::Vec4(params.specularColor[0], params.specularColor[1], params.specularColor[2], params.specularColor[3]));
+                    currentShader->setVec4("uRimColor", enginemath::Vec4(params.rimColor[0], params.rimColor[1], params.rimColor[2], params.rimColor[3]));
+                    currentShader->setFloat("uGlossiness", params.glossiness);
+
+
+                    currentlyLoaded->Draw(*currentShader);
                     break;
                 }
                 case (ANIME): {
@@ -386,16 +415,6 @@ class ModelSelect {
                 }
             };
         }
-
-        void shaderWithOutline(Shader& shader,  Model& model) {
-            shader.use();
-            glCullFace(GL_FRONT);
-            model.Draw(shader);
-
-            glCullFace(GL_BACK);
-        }
-
-
 };
 
 #endif

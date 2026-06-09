@@ -115,6 +115,14 @@ int main() {
     static const char* hdrOptions[] = {"Exposure", "GT", "ACES"};
     int currentHDR = 0;
 
+    static const ModelType modelOptions[] = {GENSHIN, SAMUS, TANGROWTH};
+    static const char* modelLabels[] = {"GENSHIN", "SAMUS", "TANGROWTH"};
+    int currentModel = 0;
+
+    static const Style shaderOptions[] = {NONE_STYLE, ANIME, CARTOON};
+    static const char* shaderLabels[] = {"NONE", "ANIME", "CARTOON"};
+    int currentShader = 0;
+
     Render renderer;
     ModelSelect model;
     // Render Loop
@@ -134,6 +142,35 @@ int main() {
 
         ImGui::Begin("Shader Controls");
 
+        if (ImGui::BeginCombo("Select Model Option", modelLabels[currentModel])) {
+            for (int i = 0; i < IM_ARRAYSIZE(modelOptions); i++) {
+                // Check if specific item is currently selected
+                bool is_selected_model = (currentModel == i);
+
+                // Render selected hdr
+                if (ImGui::Selectable(modelLabels[i], is_selected_model)) {
+                    currentModel = i;
+                }
+
+                if (is_selected_model) ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+        }
+
+        if (ImGui::BeginCombo("Select Shader Style", shaderLabels[currentShader])) {
+            for (int i = 0; i < IM_ARRAYSIZE(shaderOptions); i++) {
+                // Check if specific item is currently selected
+                bool is_selected_shader = (currentShader == i);
+
+                // Render selected hdr
+                if (ImGui::Selectable(shaderLabels[i], is_selected_shader)) {
+                    currentShader = i;
+                }
+
+                if (is_selected_shader) ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+        }
         ImGui::SliderFloat3("Directional Light", dirLight, -1.0, 1.0f);
 
         ImGui::ColorEdit3("Specular Color", specularColor);
@@ -222,9 +259,7 @@ int main() {
             cameraPos, cameraPos + cameraFront, cameraUp
         );
         // Render the model
-        model.selectModel(GENSHIN, ANIME, params, projection, view, cameraPos);
-
-
+        model.selectModel(modelOptions[currentModel], shaderOptions[currentShader], params, projection, view, cameraPos);
 
 
 

@@ -52,6 +52,7 @@ void main() {
 // Distinct colour for lit and shadow areas
     vec4 shadowTinted = vec4(clamp(texColor.rgb * shadowTint, 0.0, 1.0), 1.0);
     vec4 targetColor = mix(shadowTinted, texColor, lightIntensityDir) * vec4(lightTint, 1.0);
+    targetColor.rgb *= mix(vec3(1.0), shadowTint, 1.0 - lightIntensityDir);
 
 // Specular (Use half vector -> Blinn-Phong model)
     float specMap = texColor.a;

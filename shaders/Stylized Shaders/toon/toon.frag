@@ -6,15 +6,18 @@ in vec3 Normal;
 in vec2 TexCoord;
 in vec3 viewPos;
 
-
-uniform float time;
 uniform vec3 dirLight;
-uniform vec4 uColor;
+
 uniform vec4 uAmbient;
 uniform vec4 uDirectional;
 uniform vec4 uSpecular;
 uniform vec4 uRimColor;
 uniform float uGlossiness;
+
+struct Material {
+      sampler2D texture_diffuse1;
+  };
+  uniform Material material;
 
 void main() {
 
@@ -37,5 +40,5 @@ void main() {
 
     vec4 light = lightIntensityCartoon * uDirectional;
 
-    FragColor = uColor * (light + uAmbient + specular + rim);
+    FragColor = texture(material.texture_diffuse1, TexCoord) * (light + uAmbient + specular + rim);
 }
