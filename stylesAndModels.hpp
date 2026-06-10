@@ -55,7 +55,8 @@ enum ModelType {
 enum Style {
     NONE_STYLE,
     CARTOON,
-    ANIME
+    ANIME,
+    MANGA
 };
 
 #endif

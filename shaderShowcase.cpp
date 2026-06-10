@@ -119,8 +119,8 @@ int main() {
     static const char* modelLabels[] = {"GENSHIN", "SAMUS", "TANGROWTH"};
     int currentModel = 0;
 
-    static const Style shaderOptions[] = {NONE_STYLE, ANIME, CARTOON};
-    static const char* shaderLabels[] = {"NONE", "ANIME", "CARTOON"};
+    static const Style shaderOptions[] = {NONE_STYLE, ANIME, CARTOON, MANGA};
+    static const char* shaderLabels[] = {"NONE", "ANIME", "CARTOON", "MANGA"};
     int currentShader = 0;
 
     Render renderer;

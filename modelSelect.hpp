@@ -45,6 +45,9 @@ class ModelSelect {
             gBufferShader = new Shader("shaders/Stylized Shaders/anime/anime.geo.vert",
                                        "shaders/Stylized Shaders/anime/anime.geo.frag");
 
+            gBufferMangaShader = new Shader("shaders/Stylized Shaders/manga/manga.geo.vert",
+                                       "shaders/Stylized Shaders/manga/manga.geo.frag");
+
             bloomShader = new Shader("shaders/blur.vert", 
                                      "shaders/blur.frag");
 
@@ -66,7 +69,7 @@ class ModelSelect {
 
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-            // Set up gBuffer
+            // Set up gBuffer (for use with anime)
             glGenFramebuffers(1, &gBuffer);
             glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
 
@@ -102,6 +105,37 @@ class ModelSelect {
             glBindRenderbuffer(GL_RENDERBUFFER, rboDepth);
             glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, SCR_WIDTH, SCR_HEIGHT);
             glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepth);
+
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+            // Set up gBufferManga (for use with manga)
+            glGenFramebuffers(1, &gBufferManga);
+            glBindFramebuffer(GL_FRAMEBUFFER, gBufferManga);
+
+            // Set up position
+            glGenTextures(1, &gPositionManga);
+            glBindTexture(GL_TEXTURE_2D, gPositionManga);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gPositionManga, 0);
+
+            // Set up normal
+            glGenTextures(1, &gNormalManga);
+            glBindTexture(GL_TEXTURE_2D, gNormalManga);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gNormalManga, 0);
+
+            unsigned int mangaTextureAttachments[2] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
+            glDrawBuffers(2, mangaTextureAttachments);
+
+            // Renderbuffer object for depth
+            glGenRenderbuffers(1, &rboDepthManga);
+            glBindRenderbuffer(GL_RENDERBUFFER, rboDepthManga);
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, SCR_WIDTH, SCR_HEIGHT);
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepthManga);
 
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -158,6 +192,21 @@ class ModelSelect {
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, hdrTexture, 0);
+
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+            //Manga FBO
+            glGenFramebuffers(1, &mangaFBO);
+            glBindFramebuffer(GL_FRAMEBUFFER, mangaFBO);
+
+            glGenTextures(1, &mangaTexture);
+            glBindTexture(GL_TEXTURE_2D, mangaTexture);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mangaTexture, 0);
 
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }
@@ -218,13 +267,18 @@ class ModelSelect {
         const unsigned int SCR_WIDTH = 1600;
         const unsigned int SCR_HEIGHT = 1200;
 
-        unsigned int gBuffer;
+        unsigned int gBuffer, gBufferManga;
         unsigned int gPosition, gNormal, gAlbedoSpec;
-        unsigned int rboDepth;
+        unsigned int gPositionManga, gNormalManga;
+        unsigned int rboDepth, rboDepthManga;
         Shader* gBufferShader;
+        Shader* gBufferMangaShader;
 
         unsigned int lightingFBO;
         unsigned int lightingColorTextures[2]; // FragColor and BrightColor
+
+        unsigned int mangaFBO;
+        unsigned int mangaTexture;
 
         // Bloom
         Shader* bloomShader;
@@ -410,6 +464,60 @@ class ModelSelect {
                         currentlyLoaded->Draw(*outlineShader);
                         glCullFace(GL_BACK);
                     }
+
+                    break;
+                }
+
+                case (MANGA): {
+                    if (currentStyle != shaderStyle || currentShader == nullptr) {
+                        delete currentShader;
+                        currentShader = new Shader("shaders/Stylized Shaders/manga/manga.vert", "shaders/Stylized Shaders/manga/manga.frag");
+                        currentStyle = shaderStyle;
+                    }
+
+                    // geometry pass
+                    glBindFramebuffer(GL_FRAMEBUFFER, gBufferManga);
+                    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                    gBufferMangaShader->use();
+                    gBufferMangaShader->setMat4("projection", projection);
+                    gBufferMangaShader->setMat4("view", view);
+                    gBufferMangaShader->setMat4("model", modelMatrix);
+                    currentlyLoaded->Draw(*gBufferMangaShader);
+                    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+                    // manga shader pass
+                    glBindFramebuffer(GL_FRAMEBUFFER, mangaFBO);
+                    glClear(GL_COLOR_BUFFER_BIT);
+
+                    //Bind geo pass textures
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(GL_TEXTURE_2D, gPositionManga);
+                    glActiveTexture(GL_TEXTURE1);
+                    glBindTexture(GL_TEXTURE_2D, gNormalManga);
+
+                    currentShader->use();
+                    currentShader->setInt("geometryPass.gPosTexture", 0);
+                    currentShader->setInt("geometryPass.gNormalTexture", 1);
+                    currentShader->setVec3("uCameraPos", cameraPos);
+                    currentShader->setVec3("uDirectionalLight", enginemath::Vec3(params.dirLight[0], params.dirLight[1], params.dirLight[2]));
+
+                    renderer->drawQuad();
+
+                    glBindFramebuffer(GL_READ_FRAMEBUFFER, mangaFBO);
+                    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, finalPassFBO);
+                    glBlitFramebuffer(0, 0, SCR_WIDTH, SCR_HEIGHT, 0, 0, SCR_WIDTH, SCR_HEIGHT, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+                    
+                    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+                    
+                    // outline pass (TODO)
+
+                    // passthrough
+                    passthroughShader->use();
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(GL_TEXTURE_2D, finalPassTexture);
+                    passthroughShader->setInt("finalTextureImage", 0);
+                    renderer->drawQuad();
 
                     break;
                 }
