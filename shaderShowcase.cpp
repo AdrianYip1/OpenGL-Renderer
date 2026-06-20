@@ -93,15 +93,13 @@ int main() {
     float dirLight[3] = {1.0f, -1.0f, -1.0f};
     float specularColor[3] = {1.0f, 1.0f, 1.0f};
     float ambientTint[3] = {1.0f, 1.0f, 1.0f};
-    float shadowTint[3] = {0.0f, 0.0f, 0.0f};
+    float shadowTint[3] = {150.0f / 255.0f, 133.0f / 255.0f, 185.0f / 255.0f};
     float lightTint[3] = {1.0f, 1.0f, 1.0f};
     float rimColor[4] = {0.1f, 0.0f, 0.0f, 1.0f};
     float glossiness = 64.0f;
     float rimThreshold = 0.1f;
     float rimAmount = 0.2f;
     float outlineWidth = 0.0f;
-    float outlineBurnIntensity = 0.0f;
-    float outlineLightInfluence = 0.0f;
     float gamma = 2.2f;
     float exposure = 0.6f;
     bool bSpecularMap = false;
@@ -119,8 +117,8 @@ int main() {
     static const char* modelLabels[] = {"GENSHIN", "SAMUS", "TANGROWTH"};
     int currentModel = 0;
 
-    static const Style shaderOptions[] = {NONE_STYLE, ANIME, CARTOON, MANGA};
-    static const char* shaderLabels[] = {"NONE", "ANIME", "CARTOON", "MANGA"};
+    static const Style shaderOptions[] = {NONE_STYLE, ANIME, CARTOON, MANGA, ISOPHOTES};
+    static const char* shaderLabels[] = {"NONE", "ANIME", "CARTOON", "MANGA", "ISOPHOTES"};
     int currentShader = 0;
 
     Render renderer;
@@ -171,47 +169,62 @@ int main() {
             }
             ImGui::EndCombo();
         }
-        ImGui::SliderFloat3("Directional Light", dirLight, -1.0, 1.0f);
 
-        ImGui::ColorEdit3("Specular Color", specularColor);
-        ImGui::SliderFloat("Glossiness", &glossiness, 1.0f, 128.0f);
+        Style style = shaderOptions[currentShader];
         
-        ImGui::ColorEdit3("Ambient Tint", ambientTint);
-        ImGui::ColorEdit3("Shadow Tint", shadowTint);
-        ImGui::ColorEdit3("Light Tint", lightTint);
-        ImGui::SliderFloat("Saturation", &saturation, 0.0f, 3.0f);
-
-        ImGui::Checkbox("Enable Rim Color", &bRimColor);
-        ImGui::ColorEdit3("Rim Color", rimColor);
-        ImGui::SliderFloat("Rim Threshold", &rimThreshold, 0.0f, 1.0f);
-        ImGui::SliderFloat("Rim Amount", &rimAmount, 0.0f, 1.0f);
-
-        ImGui::Checkbox("Enable Outlines", &bOutline);
-        ImGui::SliderFloat("Outline Width", &outlineWidth, 0.0f, 0.003f);
-        ImGui::SliderFloat("Burn Intensity", &outlineBurnIntensity, 0.0f, 1.0f);
-        ImGui::SliderFloat("Light Influence", &outlineLightInfluence, 0.0f, 1.0f);
-
-        ImGui::SliderFloat("Gamma", &gamma, 0.0f, 3.0f);
-
-        ImGui::Checkbox("Enable HDR", &bHDR);
-        ImGui::SliderFloat("Exposure", &exposure, 0.0f, 2.0f);
-
-        ImGui::Checkbox("Enable Bloom", &bBloom);
-        ImGui::SliderInt("Blur Passes", &blurPasses, 0, 10);
-
-        if (ImGui::BeginCombo("Select HDR Option", hdrOptions[currentHDR])) {
-            for (int i = 0; i < IM_ARRAYSIZE(hdrOptions); i++) {
-                // Check if specific item is currently selected
-                bool is_selected_hdr = (currentHDR == i);
-
-                // Render selected hdr
-                if (ImGui::Selectable(hdrOptions[i], is_selected_hdr)) {
-                    currentHDR = i;
+        if (style != NONE_STYLE){
+            ImGui::SliderFloat3("Directional Light", dirLight, -1.0f, 1.0f);
+        }
+        if (style == ANIME || style == CARTOON) {
+            ImGui::ColorEdit3("Specular Color", specularColor);
+            ImGui::SliderFloat("Glossiness", &glossiness, 1.0f, 128.0f);
+            ImGui::ColorEdit3("Ambient Tint", ambientTint);
+            ImGui::ColorEdit3("Light Tint", lightTint);
+        }
+        if (style == ANIME) {
+            ImGui::ColorEdit3("Shadow Tint", shadowTint);
+            ImGui::SliderFloat("Saturation", &saturation, 0.0f, 3.0f);
+        }
+        if (style == CARTOON) {
+            ImGui::ColorEdit3("Rim Color", rimColor);
+        } else if (style == ANIME) {
+            ImGui::Checkbox("Enable Rim Color", &bRimColor);
+                if (bRimColor) {                       // nest: hide sub-params when off
+                ImGui::ColorEdit3("Rim Color", rimColor);
+                ImGui::SliderFloat("Rim Threshold", &rimThreshold, 0.0f, 1.0f);
+                ImGui::SliderFloat("Rim Amount", &rimAmount, 0.0f, 1.0f);
                 }
-
-                if (is_selected_hdr) ImGui::SetItemDefaultFocus();
+        }
+        if (style == ANIME) {
+            ImGui::Checkbox("Enable Outlines", &bOutline);
+            if (bOutline) {
+                ImGui::SliderFloat("Outline Width", &outlineWidth, 0.0f, 0.003f);
             }
-            ImGui::EndCombo();
+        }
+        if (style == ANIME) {
+            ImGui::Checkbox("Enable Bloom", &bBloom);
+            if (bBloom) {
+                ImGui::SliderInt("Blur Passes", &blurPasses, 0, 10);
+            }
+            ImGui::Checkbox("Enable HDR", &bHDR);
+            if (bHDR) {
+                ImGui::SliderFloat("Exposure", &exposure, 0.0f, 2.0f);
+
+                if (ImGui::BeginCombo("Select HDR Option", hdrOptions[currentHDR])) {
+                    for (int i = 0; i < IM_ARRAYSIZE(hdrOptions); i++) {
+                        // Check if specific item is currently selected
+                        bool is_selected_hdr = (currentHDR == i);
+
+                        // Render selected hdr
+                        if (ImGui::Selectable(hdrOptions[i], is_selected_hdr)) {
+                            currentHDR = i;
+                        }
+
+                        if (is_selected_hdr) ImGui::SetItemDefaultFocus();
+                    }
+                    ImGui::EndCombo();
+                }
+            }
         }
 
         ImGui::End();
@@ -237,8 +250,6 @@ int main() {
 
         params.bOutline = bOutline;
         params.outlineWidth = outlineWidth;
-        params.outlineBurnIntensity = outlineBurnIntensity;
-        params.outlineLightInfluence = outlineLightInfluence;
 
         params.gamma = gamma;
 

@@ -48,6 +48,9 @@ class ModelSelect {
             gBufferMangaShader = new Shader("shaders/Stylized Shaders/manga/manga.geo.vert",
                                        "shaders/Stylized Shaders/manga/manga.geo.frag");
 
+            gBufferIsoShader = new Shader("shaders/Stylized Shaders/isophotes/iso.geo.vert",
+                                       "shaders/Stylized Shaders/isophotes/iso.geo.frag");
+
             bloomShader = new Shader("shaders/blur.vert", 
                                      "shaders/blur.frag");
 
@@ -139,6 +142,37 @@ class ModelSelect {
 
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+            // Set up gBufferIso
+            glGenFramebuffers(1, &gBufferIso);
+            glBindFramebuffer(GL_FRAMEBUFFER, gBufferIso);
+
+            // Pos
+            glGenTextures(1, &gPositionIso);
+            glBindTexture(GL_TEXTURE_2D, gPositionIso);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gPositionIso, 0);
+
+            // Normals
+            glGenTextures(1, &gNormalIso);
+            glBindTexture(GL_TEXTURE_2D, gNormalIso);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gNormalIso, 0);
+
+            unsigned int isoTextureAttachments[2] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
+            glDrawBuffers(2, isoTextureAttachments);
+
+            // RBO for depth
+            glGenRenderbuffers(1, &rboDepthIso);
+            glBindRenderbuffer(GL_RENDERBUFFER, rboDepthIso);
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, SCR_WIDTH, SCR_HEIGHT);
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepthIso);
+
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
             // Setup Lighting FBO and color buffers
             glGenFramebuffers(1, &lightingFBO);
             glBindFramebuffer(GL_FRAMEBUFFER, lightingFBO);
@@ -209,6 +243,21 @@ class ModelSelect {
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mangaTexture, 0);
 
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+            // Iso FBO
+            glGenFramebuffers(1, &isoFBO);
+            glBindFramebuffer(GL_FRAMEBUFFER, isoFBO);
+
+            glGenTextures(1, &isoTexture);
+            glBindTexture(GL_TEXTURE_2D, isoTexture);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, isoTexture, 0);
+
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }
 
         void selectModel(ModelType model, Style shaderStyle, ShaderParams& params, enginemath::Mat4 projection,
@@ -267,18 +316,24 @@ class ModelSelect {
         const unsigned int SCR_WIDTH = 1600;
         const unsigned int SCR_HEIGHT = 1200;
 
-        unsigned int gBuffer, gBufferManga;
+        unsigned int gBuffer, gBufferManga, gBufferIso;
         unsigned int gPosition, gNormal, gAlbedoSpec;
         unsigned int gPositionManga, gNormalManga;
         unsigned int rboDepth, rboDepthManga;
+        unsigned int gPositionIso, gNormalIso;
+        unsigned int rboDepthIso;
         Shader* gBufferShader;
         Shader* gBufferMangaShader;
+        Shader* gBufferIsoShader;
 
         unsigned int lightingFBO;
         unsigned int lightingColorTextures[2]; // FragColor and BrightColor
 
         unsigned int mangaFBO;
         unsigned int mangaTexture;
+
+        unsigned int isoFBO;
+        unsigned int isoTexture;
 
         // Bloom
         Shader* bloomShader;
@@ -512,6 +567,57 @@ class ModelSelect {
                     
                     // outline pass (TODO)
 
+                    // passthrough
+                    passthroughShader->use();
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(GL_TEXTURE_2D, finalPassTexture);
+                    passthroughShader->setInt("finalTextureImage", 0);
+                    renderer->drawQuad();
+
+                    break;
+                }
+
+                case (ISOPHOTES): {
+                    if (currentStyle != shaderStyle || currentShader == nullptr) {
+                        delete currentShader;
+                        currentShader = new Shader("shaders/Stylized Shaders/isophotes/iso.vert", "shaders/Stylized Shaders/isophotes/iso.frag");
+                        currentStyle = shaderStyle;
+                    }
+
+                    // geo pass
+                    glBindFramebuffer(GL_FRAMEBUFFER, gBufferIso);
+                    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                    gBufferIsoShader->use();
+                    gBufferIsoShader->setMat4("projection", projection);
+                    gBufferIsoShader->setMat4("view", view);
+                    gBufferIsoShader->setMat4("model", modelMatrix);
+                    currentlyLoaded->Draw(*gBufferIsoShader);
+                    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+                    // iso shader pass
+                    glBindFramebuffer(GL_FRAMEBUFFER, isoFBO);
+                    glClear(GL_COLOR_BUFFER_BIT);
+
+                    // bind geo pass textures
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(GL_TEXTURE_2D, gPositionIso);
+                    glActiveTexture(GL_TEXTURE1);
+                    glBindTexture(GL_TEXTURE_2D, gNormalIso);
+
+                    currentShader->use();
+                    currentShader->setInt("geometryPass.gPosTexture", 0);
+                    currentShader->setInt("geometryPass.gNormalTexture", 1);
+                    currentShader->setVec3("uCameraPos", cameraPos);
+                    currentShader->setVec3("uDirectionalLight", enginemath::Vec3(params.dirLight[0], params.dirLight[1], params.dirLight[2]));
+                    currentShader->setFloat("uLineWidth", 0.3); // placeholder const for now -> maybe hook up to ImGUI later
+
+                    renderer->drawQuad();
+
+                    glBindFramebuffer(GL_READ_FRAMEBUFFER, isoFBO);
+                    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, finalPassFBO);
+                    glBlitFramebuffer(0, 0, SCR_WIDTH, SCR_HEIGHT, 0, 0, SCR_WIDTH, SCR_HEIGHT, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+
+                    glBindFramebuffer(GL_FRAMEBUFFER, 0);
                     // passthrough
                     passthroughShader->use();
                     glActiveTexture(GL_TEXTURE0);

@@ -56,7 +56,8 @@ enum Style {
     NONE_STYLE,
     CARTOON,
     ANIME,
-    MANGA
+    MANGA,
+    ISOPHOTES
 };
 
 #endif
