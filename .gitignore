@@ -10,3 +10,12 @@ _deps/
 *.a
 *.lib
 *.pdb
+
+# Claude Code
+CLAUDE.md
+
+# graphify
+graphify-out/
+
+# Claude Code settings
+.claude/

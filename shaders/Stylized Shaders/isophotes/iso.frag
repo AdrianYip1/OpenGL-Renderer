@@ -28,7 +28,7 @@ void main() {
 
     float threshold[4] = float[](0.2, 0.4, 0.6, 0.8);
 
-    FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+    FragColor = vec4(1.0, 1.0, 1.0, 1.0) - vec4(0.1, 0.1, 0.1, 1.0);
 
     for (int i = 0; i < 4; i++) {
         if (abs(NDiff - threshold[i]) < eps) {
