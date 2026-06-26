@@ -21,7 +21,7 @@ The amount of light on a surface is measured as `dot(normal, lightDirection)`, w
 - **[Assimp](https://github.com/assimp/assimp)** for model loading
 - **[stb_image](https://github.com/nothings/stb)** for texture loading
 
-## Images
+## Images and Videos
 
 <details>
 <summary><b>GENSHIN</b></summary>
