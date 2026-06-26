@@ -5,7 +5,7 @@ A growing collection of stylized GLSL shaders built on a **deferred rendering** 
 1. **Geometry pass.** The model is drawn once into a G-buffer (a set of textures) that stores the world position, the surface normal read from a normal map, and the base colour plus specular for every pixel. No lighting happens yet. This stage only captures the geometry. Each style has its own G-buffer holding only the channels it needs.
 2. **Lighting and style pass.** A single full-screen quad reads the G-buffer and runs the chosen style shader (anime, manga, or isophotes) to produce the stylized image. The anime pass writes two outputs at once. One holds the shaded colour and the other holds only the bright pixels for bloom.
 3. **Bloom.** The bright-pixel texture is blurred back and forth with a ping-pong Gaussian blur to spread the glow.
-4. **HDR composite pass.** The lit image and the blurred bloom are combined and tone mapped down to a displayable range.
+4. **HDR pass.** The lit image and the blurred bloom are combined and tone mapped down to a displayable range. Reinhard, GT Tonemapping, and ACES processing techniques are supported. 
 5. **Passthrough.** A final shader copies the finished texture straight to the screen.
 
 The amount of light on a surface is measured as `dot(normal, lightDirection)`, written below as N·L, where 1 means facing the light and 0 means facing away.
