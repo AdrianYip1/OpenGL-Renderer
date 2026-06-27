@@ -17,6 +17,7 @@ The amount of light on a surface is measured as `dot(normal, lightDirection)`, w
 ## Built with
 
 - **[enginemath](https://github.com/AdrianYip1/enginemath.git)**, my own math library, used for all vector and matrix math
+- **[gl-profiler](https://github.com/AdrianYip1/gl-profiler.git)**, my own GPU profiler, used to measure per-pass GPU timings with OpenGL timestamp queries
 - **[OpenGL](https://www.opengl.org/)** for rendering, with **[GLAD](https://github.com/Dav1dde/glad)** (loader), **[GLFW](https://github.com/glfw/glfw)** (windowing and input), and **[Dear ImGui](https://github.com/ocornut/imgui)** (UI)
 - **[Assimp](https://github.com/assimp/assimp)** for model loading
 - **[stb_image](https://github.com/nothings/stb)** for texture loading

@@ -203,7 +203,7 @@ class ModelSelect {
 
                 glGenTextures(1, &bloomTexture[i]);
                 glBindTexture(GL_TEXTURE_2D, bloomTexture[i]);
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, BLOOM_WIDTH, BLOOM_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -316,6 +316,10 @@ class ModelSelect {
         // Hard coded for now to prevent the function from being overcomplicated
         const unsigned int SCR_WIDTH = 1600;
         const unsigned int SCR_HEIGHT = 1200;
+
+        const unsigned int BLOOM_DIV = 4; // 2 for half resolution optimization
+        const unsigned int BLOOM_WIDTH = SCR_WIDTH / BLOOM_DIV;
+        const unsigned int BLOOM_HEIGHT = SCR_HEIGHT / BLOOM_DIV;
 
         unsigned int gBuffer, gBufferHatching, gBufferIso;
         unsigned int gPosition, gNormal, gAlbedoSpec;
@@ -465,6 +469,7 @@ class ModelSelect {
                     bool horizontal = false;
                     if (params.bBloom) {
                         profiler->push("Bloom Pass");
+                        glViewport(0, 0, BLOOM_WIDTH, BLOOM_HEIGHT);
                         bloomShader->use();
                         // Image is the "bright" lights from lighting pass
                         bloomShader->setInt("image", 0);
@@ -476,6 +481,7 @@ class ModelSelect {
                             renderer->drawQuad();
                             horizontal = !horizontal;
                         }
+                        glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
                         profiler->pop();
                     }
                     glBindFramebuffer(GL_FRAMEBUFFER, 0);
