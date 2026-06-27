@@ -52,11 +52,13 @@ enum ModelType {
     TANGROWTH
 };
 
+// Stylized non-photorealistic shading modes. CEL and HATCHING are inspired by
+// anime/manga rendering respectively (Guilty Gear Xrd's cel shading).
 enum Style {
     NONE_STYLE,
     CARTOON,
-    ANIME,
-    MANGA,
+    CEL,       // anime-style two-tone cel shading
+    HATCHING,  // manga-style pen-and-ink cross-hatching
     ISOPHOTES
 };
 

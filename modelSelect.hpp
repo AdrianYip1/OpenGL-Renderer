@@ -42,11 +42,11 @@ class ModelSelect {
             passthroughShader = new Shader("shaders/Stylized Shaders/passthrough.vert", 
                                           "shaders/Stylized Shaders/passthrough.frag");
 
-            gBufferShader = new Shader("shaders/Stylized Shaders/anime/anime.geo.vert",
-                                       "shaders/Stylized Shaders/anime/anime.geo.frag");
+            gBufferShader = new Shader("shaders/Stylized Shaders/cel/cel.geo.vert",
+                                       "shaders/Stylized Shaders/cel/cel.geo.frag");
 
-            gBufferMangaShader = new Shader("shaders/Stylized Shaders/manga/manga.geo.vert",
-                                       "shaders/Stylized Shaders/manga/manga.geo.frag");
+            gBufferHatchingShader = new Shader("shaders/Stylized Shaders/hatching/hatching.geo.vert",
+                                       "shaders/Stylized Shaders/hatching/hatching.geo.frag");
 
             gBufferIsoShader = new Shader("shaders/Stylized Shaders/isophotes/iso.geo.vert",
                                        "shaders/Stylized Shaders/isophotes/iso.geo.frag");
@@ -72,7 +72,7 @@ class ModelSelect {
 
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-            // Set up gBuffer (for use with anime)
+            // Set up gBuffer (for use with cel / anime-style shading)
             glGenFramebuffers(1, &gBuffer);
             glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
 
@@ -111,34 +111,34 @@ class ModelSelect {
 
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-            // Set up gBufferManga (for use with manga)
-            glGenFramebuffers(1, &gBufferManga);
-            glBindFramebuffer(GL_FRAMEBUFFER, gBufferManga);
+            // Set up gBufferHatching (for use with hatching / manga-style shading)
+            glGenFramebuffers(1, &gBufferHatching);
+            glBindFramebuffer(GL_FRAMEBUFFER, gBufferHatching);
 
             // Set up position
-            glGenTextures(1, &gPositionManga);
-            glBindTexture(GL_TEXTURE_2D, gPositionManga);
+            glGenTextures(1, &gPositionHatching);
+            glBindTexture(GL_TEXTURE_2D, gPositionHatching);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gPositionManga, 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gPositionHatching, 0);
 
             // Set up normal
-            glGenTextures(1, &gNormalManga);
-            glBindTexture(GL_TEXTURE_2D, gNormalManga);
+            glGenTextures(1, &gNormalHatching);
+            glBindTexture(GL_TEXTURE_2D, gNormalHatching);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gNormalManga, 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gNormalHatching, 0);
 
-            unsigned int mangaTextureAttachments[2] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
-            glDrawBuffers(2, mangaTextureAttachments);
+            unsigned int hatchingTextureAttachments[2] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
+            glDrawBuffers(2, hatchingTextureAttachments);
 
             // Renderbuffer object for depth
-            glGenRenderbuffers(1, &rboDepthManga);
-            glBindRenderbuffer(GL_RENDERBUFFER, rboDepthManga);
+            glGenRenderbuffers(1, &rboDepthHatching);
+            glBindRenderbuffer(GL_RENDERBUFFER, rboDepthHatching);
             glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, SCR_WIDTH, SCR_HEIGHT);
-            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepthManga);
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepthHatching);
 
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -229,18 +229,18 @@ class ModelSelect {
 
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-            //Manga FBO
-            glGenFramebuffers(1, &mangaFBO);
-            glBindFramebuffer(GL_FRAMEBUFFER, mangaFBO);
+            //Hatching FBO
+            glGenFramebuffers(1, &hatchingFBO);
+            glBindFramebuffer(GL_FRAMEBUFFER, hatchingFBO);
 
-            glGenTextures(1, &mangaTexture);
-            glBindTexture(GL_TEXTURE_2D, mangaTexture);
+            glGenTextures(1, &hatchingTexture);
+            glBindTexture(GL_TEXTURE_2D, hatchingTexture);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mangaTexture, 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, hatchingTexture, 0);
 
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -316,21 +316,21 @@ class ModelSelect {
         const unsigned int SCR_WIDTH = 1600;
         const unsigned int SCR_HEIGHT = 1200;
 
-        unsigned int gBuffer, gBufferManga, gBufferIso;
+        unsigned int gBuffer, gBufferHatching, gBufferIso;
         unsigned int gPosition, gNormal, gAlbedoSpec;
-        unsigned int gPositionManga, gNormalManga;
-        unsigned int rboDepth, rboDepthManga;
+        unsigned int gPositionHatching, gNormalHatching;
+        unsigned int rboDepth, rboDepthHatching;
         unsigned int gPositionIso, gNormalIso;
         unsigned int rboDepthIso;
         Shader* gBufferShader;
-        Shader* gBufferMangaShader;
+        Shader* gBufferHatchingShader;
         Shader* gBufferIsoShader;
 
         unsigned int lightingFBO;
         unsigned int lightingColorTextures[2]; // FragColor and BrightColor
 
-        unsigned int mangaFBO;
-        unsigned int mangaTexture;
+        unsigned int hatchingFBO;
+        unsigned int hatchingTexture;
 
         unsigned int isoFBO;
         unsigned int isoTexture;
@@ -390,10 +390,10 @@ class ModelSelect {
                     currentlyLoaded->Draw(*currentShader);
                     break;
                 }
-                case (ANIME): {
+                case (CEL): {
                     if (currentStyle != shaderStyle || currentShader == nullptr) {
                         delete currentShader;
-                        currentShader = new Shader("shaders/Stylized Shaders/anime/anime.vert", "shaders/Stylized Shaders/anime/anime.frag");
+                        currentShader = new Shader("shaders/Stylized Shaders/cel/cel.vert", "shaders/Stylized Shaders/cel/cel.frag");
                         currentStyle = shaderStyle;
                     }
 
@@ -508,7 +508,7 @@ class ModelSelect {
 
                     if (params.bOutline) {
                         if (outlineShader == nullptr) {
-                            outlineShader = new Shader("shaders/Stylized Shaders/anime/outline.vert", "shaders/Stylized Shaders/anime/outline.frag");
+                            outlineShader = new Shader("shaders/Stylized Shaders/cel/outline.vert", "shaders/Stylized Shaders/cel/outline.frag");
                         }
                         outlineShader->use();
                         outlineShader->setMat4("projection", projection);
@@ -523,32 +523,32 @@ class ModelSelect {
                     break;
                 }
 
-                case (MANGA): {
+                case (HATCHING): {
                     if (currentStyle != shaderStyle || currentShader == nullptr) {
                         delete currentShader;
-                        currentShader = new Shader("shaders/Stylized Shaders/manga/manga.vert", "shaders/Stylized Shaders/manga/manga.frag");
+                        currentShader = new Shader("shaders/Stylized Shaders/hatching/hatching.vert", "shaders/Stylized Shaders/hatching/hatching.frag");
                         currentStyle = shaderStyle;
                     }
 
                     // geometry pass
-                    glBindFramebuffer(GL_FRAMEBUFFER, gBufferManga);
+                    glBindFramebuffer(GL_FRAMEBUFFER, gBufferHatching);
                     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-                    gBufferMangaShader->use();
-                    gBufferMangaShader->setMat4("projection", projection);
-                    gBufferMangaShader->setMat4("view", view);
-                    gBufferMangaShader->setMat4("model", modelMatrix);
-                    currentlyLoaded->Draw(*gBufferMangaShader);
+                    gBufferHatchingShader->use();
+                    gBufferHatchingShader->setMat4("projection", projection);
+                    gBufferHatchingShader->setMat4("view", view);
+                    gBufferHatchingShader->setMat4("model", modelMatrix);
+                    currentlyLoaded->Draw(*gBufferHatchingShader);
                     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-                    // manga shader pass
-                    glBindFramebuffer(GL_FRAMEBUFFER, mangaFBO);
+                    // hatching shader pass
+                    glBindFramebuffer(GL_FRAMEBUFFER, hatchingFBO);
                     glClear(GL_COLOR_BUFFER_BIT);
 
                     //Bind geo pass textures
                     glActiveTexture(GL_TEXTURE0);
-                    glBindTexture(GL_TEXTURE_2D, gPositionManga);
+                    glBindTexture(GL_TEXTURE_2D, gPositionHatching);
                     glActiveTexture(GL_TEXTURE1);
-                    glBindTexture(GL_TEXTURE_2D, gNormalManga);
+                    glBindTexture(GL_TEXTURE_2D, gNormalHatching);
 
                     currentShader->use();
                     currentShader->setInt("geometryPass.gPosTexture", 0);
@@ -558,7 +558,7 @@ class ModelSelect {
 
                     renderer->drawQuad();
 
-                    glBindFramebuffer(GL_READ_FRAMEBUFFER, mangaFBO);
+                    glBindFramebuffer(GL_READ_FRAMEBUFFER, hatchingFBO);
                     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, finalPassFBO);
                     glBlitFramebuffer(0, 0, SCR_WIDTH, SCR_HEIGHT, 0, 0, SCR_WIDTH, SCR_HEIGHT, GL_COLOR_BUFFER_BIT, GL_LINEAR);
                     

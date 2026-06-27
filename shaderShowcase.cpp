@@ -117,8 +117,8 @@ int main() {
     static const char* modelLabels[] = {"GENSHIN", "SAMUS", "TANGROWTH"};
     int currentModel = 2;
 
-    static const Style shaderOptions[] = {NONE_STYLE, ANIME, CARTOON, MANGA, ISOPHOTES};
-    static const char* shaderLabels[] = {"NONE", "ANIME", "CARTOON", "MANGA", "ISOPHOTES"};
+    static const Style shaderOptions[] = {NONE_STYLE, CEL, CARTOON, HATCHING, ISOPHOTES};
+    static const char* shaderLabels[] = {"NONE", "Cel (Anime)", "CARTOON", "Hatching (Manga)", "ISOPHOTES"};
     int currentShader = 0;
 
     Render renderer;
@@ -175,19 +175,19 @@ int main() {
         if (style != NONE_STYLE){
             ImGui::SliderFloat3("Directional Light", dirLight, -1.0f, 1.0f);
         }
-        if (style == ANIME || style == CARTOON) {
+        if (style == CEL || style == CARTOON) {
             ImGui::ColorEdit3("Specular Color", specularColor);
             ImGui::SliderFloat("Glossiness", &glossiness, 1.0f, 128.0f);
             ImGui::ColorEdit3("Ambient Tint", ambientTint);
             ImGui::ColorEdit3("Light Tint", lightTint);
         }
-        if (style == ANIME) {
+        if (style == CEL) {
             ImGui::ColorEdit3("Shadow Tint", shadowTint);
             ImGui::SliderFloat("Saturation", &saturation, 0.0f, 3.0f);
         }
         if (style == CARTOON) {
             ImGui::ColorEdit3("Rim Color", rimColor);
-        } else if (style == ANIME) {
+        } else if (style == CEL) {
             ImGui::Checkbox("Enable Rim Color", &bRimColor);
                 if (bRimColor) {                       // nest: hide sub-params when off
                 ImGui::ColorEdit3("Rim Color", rimColor);
@@ -195,13 +195,13 @@ int main() {
                 ImGui::SliderFloat("Rim Amount", &rimAmount, 0.0f, 1.0f);
                 }
         }
-        if (style == ANIME) {
+        if (style == CEL) {
             ImGui::Checkbox("Enable Outlines", &bOutline);
             if (bOutline) {
                 ImGui::SliderFloat("Outline Width", &outlineWidth, 0.0f, 0.003f);
             }
         }
-        if (style == ANIME) {
+        if (style == CEL) {
             ImGui::Checkbox("Enable Bloom", &bBloom);
             if (bBloom) {
                 ImGui::SliderInt("Blur Passes", &blurPasses, 0, 10);

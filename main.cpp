@@ -60,7 +60,7 @@ void processInput(GLFWwindow* window, Shader& shader) {
         usingShader = false;
     }
     if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {
-        shader = Shader("shaders/Stylized Shaders/anime/anime.vert", "shaders/Stylized Shaders/anime/anime.frag");
+        shader = Shader("shaders/Stylized Shaders/cel/cel.vert", "shaders/Stylized Shaders/cel/cel.frag");
         usingShader = true;
     }
 }
@@ -105,8 +105,8 @@ int main() {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     //Shader shader("shaders/shader.vert", "shaders/shader.frag");
-    Shader shader("shaders/Stylized Shaders/anime/anime.vert", "shaders/Stylized Shaders/anime/anime.frag");
-    Shader outlineShader("shaders/Stylized Shaders/anime/outline.vert", "shaders/Stylized Shaders/anime/outline.frag");
+    Shader shader("shaders/Stylized Shaders/cel/cel.vert", "shaders/Stylized Shaders/cel/cel.frag");
+    Shader outlineShader("shaders/Stylized Shaders/cel/outline.vert", "shaders/Stylized Shaders/cel/outline.frag");
         
     //sphere vertices and indices
     std::vector<Vertex> vertices;
