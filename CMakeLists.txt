@@ -68,6 +68,11 @@ target_include_directories(glsl-shaders PRIVATE
     ${CMAKE_SOURCE_DIR}
 )
 
+# Build the gl-profiler submodule. Its header includes <glad/glad.h>, so point it
+# at our glad loader's include directory.
+set(GLP_GL_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libraries/include CACHE STRING "" FORCE)
+add_subdirectory(external/gl-profiler)
+
 if (WIN32)
     target_link_libraries(glsl-shaders PRIVATE
         opengl32
@@ -75,6 +80,7 @@ if (WIN32)
         enginemath::enginemath
         assimp::assimp
         imgui
+        glp::profiler
     )
 elseif(UNIX)
     find_package(OpenGL REQUIRED)
@@ -86,5 +92,6 @@ elseif(UNIX)
         enginemath::enginemath
         assimp::assimp
         imgui
+        glp::profiler
     )
 endif()

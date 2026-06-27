@@ -26,51 +26,39 @@ The amount of light on a surface is measured as `dot(normal, lightDirection)`, w
 <details>
 <summary><b>GENSHIN Model</b></summary>
 
-| GIF |
-|:---:|
-| ![Genshin](media/genshin/g.gif) |
-
 | Normal | Cel |
 |:---:|:---:|
-| ![Normal](media/genshin/g_normal.png) | ![Cel](media/genshin/g_cel.png) |
+| ![Normal](media/genshin/g_normal.png) | ![Cel](media/genshin/g_cel.gif) |
 
 | Hatching | Isophotes |
 |:---:|:---:|
-| ![Hatching](media/genshin/g_hatching.png) | ![Isophotes](media/genshin/g_isophotes.png) |
+| ![Hatching](media/genshin/g_hatching.gif) | ![Isophotes](media/genshin/g_isophotes.gif) |
 
 </details>
 
 <details>
 <summary><b>SAMUS Model</b></summary>
 
-| GIF |
-|:---:|
-| ![Samus](media/samus/s.gif) |
-
 | Normal | Cel |
 |:---:|:---:|
-| ![Normal](media/samus/s_normal.png) | ![Cel](media/samus/s_cel.png) |
+| ![Normal](media/samus/s_normal.png) | ![Cel](media/samus/s_cel.gif) |
 
 | Hatching | Isophotes |
 |:---:|:---:|
-| ![Hatching](media/samus/s_hatching.png) | ![Isophotes](media/samus/s_isophotes.png) |
+| ![Hatching](media/samus/s_hatching.gif) | ![Isophotes](media/samus/s_isophotes.gif) |
 
 </details>
 
 <details>
 <summary><b>TANGROWTH Model</b></summary>
 
-| GIF |
-|:---:|
-| ![Tangrowth](media/tangrowth/t.gif) |
-
 | Normal | Cel |
 |:---:|:---:|
-| ![Normal](media/tangrowth/t_normal.png) | ![Cel](media/tangrowth/t_cel.png) |
+| ![Normal](media/tangrowth/t_normal.png) | ![Cel](media/tangrowth/t_cel.gif) |
 
 | Hatching | Isophotes |
 |:---:|:---:|
-| ![Hatching](media/tangrowth/t_hatching.png) | ![Isophotes](media/tangrowth/t_isophotes.png) |
+| ![Hatching](media/tangrowth/t_hatching.gif) | ![Isophotes](media/tangrowth/t_isophotes.gif) |
 
 </details>
 

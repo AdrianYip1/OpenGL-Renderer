@@ -15,6 +15,7 @@
 #include <camera/camera.hpp>
 #include <model/model.hpp>
 #include <stylesAndModels.hpp>
+#include "glp/profiler.h"
 
 
 
@@ -261,7 +262,7 @@ class ModelSelect {
         }
 
         void selectModel(ModelType model, Style shaderStyle, ShaderParams& params, enginemath::Mat4 projection,
-        enginemath::Mat4 view, enginemath::Vec3 cameraPos) {
+        enginemath::Mat4 view, enginemath::Vec3 cameraPos, Profiler& profiler) {
 
             switch (model) {
                 case (GENSHIN): {
@@ -271,7 +272,7 @@ class ModelSelect {
                         currentModel = model;
                     }
                     enginemath::Mat4 genshinModelMat = enginemath::Mat4::translationM(0.0f, -1.0f, 0.0f);
-                    selectStyle(shaderStyle, params, projection, view, cameraPos, genshinModelMat);
+                    selectStyle(shaderStyle, params, projection, view, cameraPos, genshinModelMat, &profiler);
                     break;
                 }
                 case (SAMUS): {
@@ -281,7 +282,7 @@ class ModelSelect {
                         currentModel = model;
                     }
                     enginemath::Mat4 samusModelMat = enginemath::Mat4::translationM(0.0f, -1.0f, 0.0f) * enginemath::Mat4::scaleM(0.01f, 0.01f, 0.01f);
-                    selectStyle(shaderStyle, params, projection, view, cameraPos, samusModelMat);
+                    selectStyle(shaderStyle, params, projection, view, cameraPos, samusModelMat, &profiler);
                     break;
                 }
                 case (TANGROWTH): {
@@ -291,7 +292,7 @@ class ModelSelect {
                         currentModel = model;
                     }
                     enginemath::Mat4 tanModelMat = enginemath::Mat4::translationM(0.0f, -1.0f, 0.0f) * enginemath::Mat4::scaleM(0.01f, 0.01f, 0.01f);
-                    selectStyle(shaderStyle, params, projection, view, cameraPos, tanModelMat);
+                    selectStyle(shaderStyle, params, projection, view, cameraPos, tanModelMat, &profiler);
                     break;
                 }
 
@@ -350,7 +351,7 @@ class ModelSelect {
         unsigned int finalPassTexture;
 
         void selectStyle(Style shaderStyle, ShaderParams& params, enginemath::Mat4 projection,
-        enginemath::Mat4 view, enginemath::Vec3 cameraPos, enginemath::Mat4 modelMatrix) {
+        enginemath::Mat4 view, enginemath::Vec3 cameraPos, enginemath::Mat4 modelMatrix, Profiler* profiler) {
             switch (shaderStyle) {
                 case (NONE_STYLE): {
                     if (currentStyle != shaderStyle || currentShader == nullptr) {
@@ -373,6 +374,7 @@ class ModelSelect {
                         currentShader = new Shader("shaders/Stylized Shaders/toon/toon.vert", "shaders/Stylized Shaders/toon/toon.frag");
                         currentStyle = shaderStyle;
                     }
+                    profiler->push("Cartoon Pipeline");
                     currentShader->use();
                     currentShader->setMat4("projection", projection);
                     currentShader->setMat4("view", view);
@@ -388,6 +390,7 @@ class ModelSelect {
 
 
                     currentlyLoaded->Draw(*currentShader);
+                    profiler->pop();
                     break;
                 }
                 case (CEL): {
@@ -397,7 +400,10 @@ class ModelSelect {
                         currentStyle = shaderStyle;
                     }
 
+                    profiler->push("CEL Pipeline");
                     // Geometry pass
+                    profiler->push("Geo Pass");
+
                     glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
                     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
                     gBufferShader->use();
@@ -406,8 +412,10 @@ class ModelSelect {
                     gBufferShader->setMat4("model", modelMatrix);
                     currentlyLoaded->Draw(*gBufferShader);
                     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                    profiler->pop();
 
                     // Lighting Pass
+                    profiler->push("Lighting Pass");
                     glBindFramebuffer(GL_FRAMEBUFFER, lightingFBO);
                     glClear(GL_COLOR_BUFFER_BIT);
 
@@ -444,8 +452,10 @@ class ModelSelect {
                     glReadBuffer(GL_COLOR_ATTACHMENT0);
                     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, finalPassFBO);
                     glBlitFramebuffer(0, 0, SCR_WIDTH, SCR_HEIGHT, 0, 0, SCR_WIDTH, SCR_HEIGHT, GL_COLOR_BUFFER_BIT, GL_LINEAR);
-                    
+                    profiler->pop();
+
                     // Bloom Pass
+
                     for (int i = 0; i < 2; i++) {
                         glBindFramebuffer(GL_FRAMEBUFFER, bloomFBO[i]);
                         glClear(GL_COLOR_BUFFER_BIT);
@@ -454,6 +464,7 @@ class ModelSelect {
 
                     bool horizontal = false;
                     if (params.bBloom) {
+                        profiler->push("Bloom Pass");
                         bloomShader->use();
                         // Image is the "bright" lights from lighting pass
                         bloomShader->setInt("image", 0);
@@ -465,11 +476,15 @@ class ModelSelect {
                             renderer->drawQuad();
                             horizontal = !horizontal;
                         }
+                        profiler->pop();
                     }
                     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+
                     // HDR Pass
+
                     if (params.bHDR) {
+                        profiler->push("HDR Pass");
                         hdrShader->use();
                         glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
                         glClear(GL_COLOR_BUFFER_BIT);
@@ -490,10 +505,12 @@ class ModelSelect {
                         glBindFramebuffer(GL_READ_FRAMEBUFFER, hdrFBO);
                         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, finalPassFBO);
                         glBlitFramebuffer(0, 0, SCR_WIDTH, SCR_HEIGHT, 0, 0, SCR_WIDTH, SCR_HEIGHT, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+                        profiler->pop();
                     }
                     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                    
 
-
+                    profiler->push("Passthrough");
                     passthroughShader->use();
                     glActiveTexture(GL_TEXTURE0);
                     glBindTexture(GL_TEXTURE_2D, finalPassTexture); // from lighting pass, maybe move it to a general buffer
@@ -505,8 +522,11 @@ class ModelSelect {
                     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
                     glBlitFramebuffer(0, 0, SCR_WIDTH, SCR_HEIGHT, 0, 0, SCR_WIDTH, SCR_HEIGHT, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 
+                    profiler->pop();
+
 
                     if (params.bOutline) {
+                        profiler->push("Outline Pass");
                         if (outlineShader == nullptr) {
                             outlineShader = new Shader("shaders/Stylized Shaders/cel/outline.vert", "shaders/Stylized Shaders/cel/outline.frag");
                         }
@@ -518,7 +538,9 @@ class ModelSelect {
                         glCullFace(GL_FRONT);
                         currentlyLoaded->Draw(*outlineShader);
                         glCullFace(GL_BACK);
+                        profiler->pop();
                     }
+                    profiler->pop(); 
 
                     break;
                 }
@@ -529,8 +551,9 @@ class ModelSelect {
                         currentShader = new Shader("shaders/Stylized Shaders/hatching/hatching.vert", "shaders/Stylized Shaders/hatching/hatching.frag");
                         currentStyle = shaderStyle;
                     }
-
+                    profiler->push("Hatching Pipeline");
                     // geometry pass
+                    profiler->push("Geo Pass");
                     glBindFramebuffer(GL_FRAMEBUFFER, gBufferHatching);
                     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
                     gBufferHatchingShader->use();
@@ -539,8 +562,11 @@ class ModelSelect {
                     gBufferHatchingShader->setMat4("model", modelMatrix);
                     currentlyLoaded->Draw(*gBufferHatchingShader);
                     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                    profiler->pop();
 
+                    
                     // hatching shader pass
+                    profiler->push("Lighting/Hatching Shader Pass");
                     glBindFramebuffer(GL_FRAMEBUFFER, hatchingFBO);
                     glClear(GL_COLOR_BUFFER_BIT);
 
@@ -563,16 +589,20 @@ class ModelSelect {
                     glBlitFramebuffer(0, 0, SCR_WIDTH, SCR_HEIGHT, 0, 0, SCR_WIDTH, SCR_HEIGHT, GL_COLOR_BUFFER_BIT, GL_LINEAR);
                     
                     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
+                    profiler->pop();
+                    
                     
                     // outline pass (TODO)
 
                     // passthrough
+                    profiler->push("Passthrough");
                     passthroughShader->use();
                     glActiveTexture(GL_TEXTURE0);
                     glBindTexture(GL_TEXTURE_2D, finalPassTexture);
                     passthroughShader->setInt("finalTextureImage", 0);
                     renderer->drawQuad();
+                    profiler->pop();
+                    profiler->pop(); // for "Hatching Pipeline"
 
                     break;
                 }
@@ -583,8 +613,10 @@ class ModelSelect {
                         currentShader = new Shader("shaders/Stylized Shaders/isophotes/iso.vert", "shaders/Stylized Shaders/isophotes/iso.frag");
                         currentStyle = shaderStyle;
                     }
-
+                    profiler->push("Isophotes Pipeline");
                     // geo pass
+
+                    profiler->push("Geo Pass");
                     glBindFramebuffer(GL_FRAMEBUFFER, gBufferIso);
                     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
                     gBufferIsoShader->use();
@@ -593,8 +625,10 @@ class ModelSelect {
                     gBufferIsoShader->setMat4("model", modelMatrix);
                     currentlyLoaded->Draw(*gBufferIsoShader);
                     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                    profiler->pop();
 
                     // iso shader pass
+                    profiler->push("Lighting/Iso Shader Pass");
                     glBindFramebuffer(GL_FRAMEBUFFER, isoFBO);
                     glClear(GL_COLOR_BUFFER_BIT);
 
@@ -618,12 +652,17 @@ class ModelSelect {
                     glBlitFramebuffer(0, 0, SCR_WIDTH, SCR_HEIGHT, 0, 0, SCR_WIDTH, SCR_HEIGHT, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 
                     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                    profiler->pop();
+
                     // passthrough
+                    profiler->push("Passthrough");
                     passthroughShader->use();
                     glActiveTexture(GL_TEXTURE0);
                     glBindTexture(GL_TEXTURE_2D, finalPassTexture);
                     passthroughShader->setInt("finalTextureImage", 0);
                     renderer->drawQuad();
+                    profiler->pop();
+                    profiler->pop(); // for "Isophotes Pipeline"
 
                     break;
                 }

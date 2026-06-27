@@ -1,3 +1,6 @@
 [submodule "libraries/enginemath"]
 	path = libraries/enginemath
 	url = https://github.com/AdrianYip1/enginemath.git
+[submodule "external/gl-profiler"]
+	path = external/gl-profiler
+	url = https://github.com/AdrianYip1/gl-profiler.git

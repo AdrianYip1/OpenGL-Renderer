@@ -15,6 +15,7 @@
 #include <imgui_impl_opengl3.h>
 #include <stylesAndModels.hpp>
 #include <modelSelect.hpp>
+#include "glp/profiler.h"
 
 const unsigned int SCR_WIDTH = 1600;
 const unsigned int SCR_HEIGHT = 1200;
@@ -123,6 +124,7 @@ int main() {
 
     Render renderer;
     ModelSelect model;
+    Profiler profiler;
     // Render Loop
     while (!glfwWindowShouldClose(window)) {
 
@@ -132,6 +134,8 @@ int main() {
 
         processInput(window);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        profiler.beginFrame();
 
         // Connect GUI with params
         ImGui_ImplOpenGL3_NewFrame();
@@ -270,9 +274,43 @@ int main() {
             cameraPos, cameraPos + cameraFront, cameraUp
         );
         // Render the model
-        model.selectModel(modelOptions[currentModel], shaderOptions[currentShader], params, projection, view, cameraPos);
+        model.selectModel(modelOptions[currentModel], shaderOptions[currentShader], params, projection, view, cameraPos, profiler);
 
 
+        profiler.endFrame();
+
+        // Profiler overlay
+        {
+            const ImGuiViewport* viewport = ImGui::GetMainViewport();
+            const float pad = 10.0f;
+            ImVec2 pos(viewport->WorkPos.x + viewport->WorkSize.x - pad,
+                       viewport->WorkPos.y + viewport->WorkSize.y - pad);
+            ImGui::SetNextWindowPos(pos, ImGuiCond_Always, ImVec2(1.0f, 1.0f));
+            ImGui::SetNextWindowBgAlpha(0.5f);
+
+            ImGuiWindowFlags flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
+                                     ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing |
+                                     ImGuiWindowFlags_NoNav;
+
+            if (ImGui::Begin("GPU Profiler", nullptr, flags)) {
+                double totalMs = 0.0;
+                const auto& results = profiler.results();
+                if (results.empty()) {
+                    ImGui::TextDisabled("No timing data");
+                } else {
+                    for (const auto& r : results) {
+                        if (r.depth > 0) ImGui::Indent(r.depth * 12.0f);
+                        ImGui::Text("%s: %.3f ms", r.name.c_str(), r.ms);
+                        if (r.depth > 0) ImGui::Unindent(r.depth * 12.0f);
+                        if (r.depth == 0) totalMs += r.ms;
+                    }
+                    ImGui::Separator();
+                    ImGui::Text("Total: %.3f ms", totalMs);
+                    ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+                }
+            }
+            ImGui::End();
+        }
 
         // Render ImGui
         ImGui::Render();
