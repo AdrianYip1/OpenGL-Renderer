@@ -24,7 +24,7 @@ The amount of light on a surface is measured as `dot(normal, lightDirection)`, w
 ## Images and Videos
 
 <details>
-<summary><b>GENSHIN</b></summary>
+<summary><b>GENSHIN Model</b></summary>
 
 | GIF |
 |:---:|
@@ -41,7 +41,7 @@ The amount of light on a surface is measured as `dot(normal, lightDirection)`, w
 </details>
 
 <details>
-<summary><b>SAMUS</b></summary>
+<summary><b>SAMUS Model</b></summary>
 
 | GIF |
 |:---:|
@@ -58,7 +58,7 @@ The amount of light on a surface is measured as `dot(normal, lightDirection)`, w
 </details>
 
 <details>
-<summary><b>TANGROWTH</b></summary>
+<summary><b>TANGROWTH Model</b></summary>
 
 | GIF |
 |:---:|
