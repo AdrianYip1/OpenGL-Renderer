@@ -19,3 +19,4 @@ graphify-out/
 
 # Claude Code settings
 .claude/
+imgui.ini
