@@ -25,6 +25,20 @@ set(ASSIMP_BUILD_GLTF_IMPORTER ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(assimp)
 
 FetchContent_Declare(
+    glfw
+    GIT_REPOSITORY https://github.com/glfw/glfw.git
+    GIT_TAG 3.4
+)
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
+# Linux: build the X11 backend only. Wayland would pull in a pkg-config
+# dependency, and WSLg serves the display over X11 regardless. No effect on Windows.
+set(GLFW_BUILD_WAYLAND OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(glfw)
+
+FetchContent_Declare(
     imgui
     GIT_REPOSITORY https://github.com/ocornut/imgui.git
     GIT_TAG v1.90.4
@@ -74,24 +88,16 @@ set(GLP_GL_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libraries/include CACHE STRING "" FO
 add_subdirectory(external/gl-profiler)
 
 if (WIN32)
-    target_link_libraries(glsl-shaders PRIVATE
-        opengl32
-        ${CMAKE_SOURCE_DIR}/libraries/lib/glfw3.lib
-        enginemath::enginemath
-        assimp::assimp
-        imgui
-        glp::profiler
-    )
+    target_link_libraries(glsl-shaders PRIVATE opengl32)
 elseif(UNIX)
     find_package(OpenGL REQUIRED)
-    find_package(glfw3 REQUIRED)
-
-    target_link_libraries(glsl-shaders PRIVATE
-        OpenGL::GL
-        glfw
-        enginemath::enginemath
-        assimp::assimp
-        imgui
-        glp::profiler
-    )
+    target_link_libraries(glsl-shaders PRIVATE OpenGL::GL)
 endif()
+
+target_link_libraries(glsl-shaders PRIVATE
+    glfw
+    enginemath::enginemath
+    assimp::assimp
+    imgui
+    glp::profiler
+)
