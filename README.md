@@ -1,6 +1,6 @@
 # OpenGL Shader Showcase
 
-A growing collection of stylized GLSL shaders built on a **deferred rendering** pipeline. The non-photorealistic styles are inspired by anime and manga art — in particular the cel shading of *Guilty Gear Xrd* - but named after the techniques they implement (cel shading, cross-hatching, isophotes). Instead of lighting the model as it is drawn, the scene is rendered in stages and passed from one off-screen framebuffer to the next.
+A growing collection of stylized GLSL shaders built on a **deferred rendering** pipeline. The non-photorealistic styles are inspired by anime and manga art (in particular the cel shading of *Guilty Gear Xrd*) but named after the techniques they implement (cel shading, cross-hatching, isophotes). Instead of lighting the model as it is drawn, the scene is rendered in stages and passed from one off-screen framebuffer to the next.
 
 ## Images and Videos
 
@@ -52,8 +52,8 @@ A growing collection of stylized GLSL shaders built on a **deferred rendering** 
 
 The amount of light on a surface is measured as `dot(normal, lightDirection)`, written below as N·L, where 1 means facing the light and 0 means facing away.
 
-- **Cel** *(anime inspired)***.** A two-tone cel shading style in the vein of *Guilty Gear Xrd*. Instead of a smooth light falloff, the surface is split into two flat tones. Anything above an N·L threshold gets the lit colour and everything else gets a darker shadow colour, which gives the flat cel shaded look. On top of that there is a tinted highlight where the light reflects toward the camera, a saturation slider, a glowing rim light on the sides facing away from the light, and a bloom pass that makes the brightest pixels glow.
-- **Hatching** *(manga inspired)***.** A black-and-white pen-and-ink style. The N·L value is sliced into a few brightness ranges and each range is filled with a different hand drawn pattern. Darker areas stack more layers of diagonal and horizontal hatching lines, mid tones get a dot pattern called screentone, and lit areas stay white. Object outlines are drawn by detecting where the normal or depth suddenly jumps between neighbouring pixels.
+- **Cel** *(anime inspired)***.** A two-tone cel shading style similar to *Guilty Gear Xrd*. Instead of a smooth light falloff, the surface is split into two flat tones. Anything above an N·L threshold gets the lit colour and everything else gets a darker shadow colour, which gives the flat cel shaded look. On top of that there is a tinted highlight where the light reflects toward the camera, a saturation slider, a glowing rim light on the sides facing away from the light, and a bloom pass that makes the brightest pixels glow.
+- **Hatching** *(manga inspired)***.** A comic book/manga, pen-and-ink style. The N·L value is sliced into a few brightness ranges and each range is filled with a different hand drawn pattern. Darker areas stack more layers of diagonal and horizontal hatching lines, mid tones get a dot pattern called screentone, and lit areas stay white. Object outlines are drawn by detecting where the normal or depth suddenly jumps between neighbouring pixels.
 - **Isophotes.** Draws contour lines across the surface wherever the lighting hits set brightness levels, like a topographic map but for light. Each line stays the same thickness on screen no matter the distance or angle, by scaling it with the rate the lighting changes across nearby pixels.
 
 ## Built with
