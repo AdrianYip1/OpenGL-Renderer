@@ -87,6 +87,9 @@ int main() {
         std::cerr << "Failed to initialize GLAD\n"; return -1;
     }
 
+    std::cout << "GL_RENDERER: " << reinterpret_cast<const char*>(glGetString(GL_RENDERER)) << '\n';
+    std::cout << "GL_VENDOR: " << reinterpret_cast<const char*>(glGetString(GL_VENDOR)) << '\n';
+
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
 
@@ -265,7 +268,7 @@ int main() {
         params.blurPasses = blurPasses;
 
         enginemath::Mat4 projection = enginemath::Mat4::projectionM(
-            45.0f * M_PI / 180.0f,
+            enginemath::toRad(45.0f),
             (float)SCR_WIDTH / (float)SCR_HEIGHT,
             0.1f, 100.0f
         );
