@@ -1,8 +1,8 @@
 # OpenGL Shader Showcase
 
 <p align="center">
-  <img src="media/samus/s_cel.gif" width="400">
-  <img src="media/samus/s_hatching.gif" width="400">
+  <img src="media/tangrowth/t_cel.gif" width="400">
+  <img src="media/tangrowth/t_hatching.gif" width="400">
 </p>
 
 A growing collection of stylized GLSL shaders built on a **deferred rendering** pipeline. The non-photorealistic styles are inspired by anime and manga art (in particular the cel shading of *Guilty Gear Xrd*) but named after the techniques they implement (cel shading, cross-hatching, isophotes). Instead of lighting the model as it is drawn, the scene is rendered in stages and passed from one off-screen framebuffer to the next.
