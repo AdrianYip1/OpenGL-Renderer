@@ -7,7 +7,7 @@
 
 A growing collection of stylized GLSL shaders built on a **deferred rendering** pipeline. The non-photorealistic styles are inspired by anime and manga art (in particular the cel shading of *Guilty Gear Xrd*) but named after the techniques they implement (cel shading, cross-hatching, isophotes). Instead of lighting the model as it is drawn, the scene is rendered in stages and passed from one off-screen framebuffer to the next.
 
-## Images and Videos
+## Additional Images and Video
 
 <p align="center">
   <a href="https://www.youtube.com/watch?v=YQR7FR57fY0">
@@ -15,7 +15,7 @@ A growing collection of stylized GLSL shaders built on a **deferred rendering** 
   </a>
 </p>
 
-<p align="center"><a href="https://www.youtube.com/watch?v=YQR7FR57fY0">▶ Watch the demo on YouTube</a></p>
+<p align="center"><a href="https://www.youtube.com/watch?v=YQR7FR57fY0">Watch the demo on YouTube</a></p>
 
 <details>
 <summary><b>TANGROWTH Model</b></summary>
