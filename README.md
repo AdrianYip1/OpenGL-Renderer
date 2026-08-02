@@ -1,4 +1,4 @@
-# OpenGL Shader Showcase
+# OpenGL Shader Renderer
 
 <p align="center">
   <img src="media/tangrowth/t_cel.gif" width="400">
