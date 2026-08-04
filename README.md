@@ -69,6 +69,20 @@ The amount of light on a surface is measured as `dot(normal, lightDirection)`, w
 - **Hatching** *(manga inspired)***.** A comic book/manga, pen-and-ink style. The N·L value is sliced into a few brightness ranges and each range is filled with a different hand drawn pattern. Darker areas stack more layers of diagonal and horizontal hatching lines, mid tones get a dot pattern, and lit areas stay white. Object outlines are drawn by detecting where the normal or depth suddenly jumps between neighbouring pixels.
 - **Isophotes.** Draws contour lines across the surface wherever the lighting hits set brightness levels, like a topographic map but for light. Each line stays the same thickness on screen no matter the distance or angle, by scaling it with the rate the lighting changes across nearby pixels.
 
+## Building
+
+Requires CMake 3.20+ and a C++17 compiler. `assimp` and `glfw` are fetched on first configure.
+
+```bash
+git clone --recursive https://github.com/AdrianYip1/OpenGL-Renderer.git
+cd OpenGL-Renderer
+cmake -B build
+cmake --build build
+./build/bin/glsl-shaders
+```
+
+Run from the repository root, the shaders are loaded by relative path.
+
 ## Built with
 
 - **[enginemath](https://github.com/AdrianYip1/enginemath.git)**, my own math library, used for all vector and matrix math
